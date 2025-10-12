@@ -125,26 +125,6 @@ async def get_wallet_balance(wallet: str, chain: str) -> List[Dict]:
                 "chain": chain
             })
 
-    #     print(f"Fetching wallet balances for {wallet}")
-    #
-    #
-    #     # Demo data - replace with actual blockchain queries
-    #     demo_balances = [
-    #         {
-    #             "token": "ethereum",
-    #             "symbol": "ETH",
-    #             "balance": 2.5,
-    #             "chain": chain
-    #         },
-    #         {
-    #             "token": "usd-coin",
-    #             "symbol": "USDC",
-    #             "balance": 5000,
-    #             "chain": chain
-    #         }
-    #     ]
-    #
-
     # Fetch USD prices for all tokens
     enriched_balances = []
     for asset in balances:
