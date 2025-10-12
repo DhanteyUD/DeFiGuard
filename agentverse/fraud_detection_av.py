@@ -129,6 +129,9 @@ def analyze_token_name(token_address: str) -> Dict:
     Analyze token name for scam indicators
     NOTE: Using simulated data for demo
     """
+
+    print(f"Token Address: {token_address}")
+
     # In production, fetch actual token name/symbol from blockchain
     token_name = "SafeMoonRocket"  # Simulated
     token_symbol = "SMR"  # Simulated
