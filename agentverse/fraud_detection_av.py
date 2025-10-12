@@ -1,14 +1,8 @@
 from uagents import Agent, Context, Model
-# from uagents.setup import fund_agent_if_low
-from typing import List, Dict
-import os
-from dotenv import load_dotenv
 from datetime import datetime, timezone
+from typing import List, Dict
 
-load_dotenv()
 
-
-# Data Models
 class TokenAnalysisRequest(Model):
     token_address: str
     chain: str
@@ -30,29 +24,27 @@ class ErrorResponse(Model):
     timestamp: str
 
 
-# Create Fraud Detection Agent
 fraud_agent = Agent(
     name="fraud_detection",
-    seed=os.getenv("FRAUD_AGENT_SEED", "fraud_demo_seed"),
-    port=8004,
-    endpoint=["http://localhost:8004/submit"],
-    mailbox=False # type: ignore[arg-type]
+    mailbox=True  # type: ignore[arg-type]
 )
-
-# fund_agent_if_low(str(fraud_agent.wallet.address()))
 
 print(f"Fraud Detection Agent Address: {fraud_agent.address}")
 
 # Known scam patterns and red flags
 SCAM_INDICATORS = {
-    "honeypot_keywords": ["safemoon", "elon", "baby", "inu", "cum", "safe"],
-    "suspicious_names": ["v2", "v3", "fork", "copy"],
+    "honeypot_keywords": ["safemoon", "elon", "baby", "inu", "cum", "safe", "moon"],
+    "suspicious_names": ["v2", "v3", "fork", "copy", "clone"],
     "high_tax_threshold": 10,  # Over 10% tax is suspicious
 }
 
 
 async def check_token_security(token_address: str, chain: str) -> Dict:
-    """Check token for common security issues"""
+    """
+    Check token for common security issues
+    NOTE: Using simulated data for demo
+    In production, integrate with GoPlus Security API, Honeypot.is, etc.
+    """
 
     print(f"Token Address: {token_address}")
     print(f"Chain: {chain}")
@@ -60,22 +52,22 @@ async def check_token_security(token_address: str, chain: str) -> Dict:
     findings = []
     risk_score = 0
 
-    # Simulate contract analysis (integrate with actual security APIs)
-    # In production, use GoPlus Security API, Honeypot.is, etc.
+    # Simulation data for demo purposes
+    # In production, query actual blockchain/security APIs
 
-    # Check 1: Token age (demo data)
+    # Check 1: Token age
     token_age_days = 30  # Simulated
     if token_age_days < 7:
         findings.append("Token is very new (less than 7 days old)")
         risk_score += 20
 
-    # Check 2: Liquidity (demo)
+    # Check 2: Liquidity
     liquidity_usd = 50000  # Simulated
     if liquidity_usd < 10000:
         findings.append(f"Low liquidity (${liquidity_usd:,.2f})")
         risk_score += 15
 
-    # Check 3: Holder concentration (demo)
+    # Check 3: Holder concentration
     top_holder_percent = 45  # Simulated
     if top_holder_percent > 50:
         findings.append(f"Top holder owns {top_holder_percent}% of supply")
@@ -112,7 +104,7 @@ async def check_token_security(token_address: str, chain: str) -> Dict:
         findings.append("Sell tax significantly higher than buy tax")
         risk_score += 20
 
-    # Check 7: Honeypot detection
+    # Check 7: Honeypot detection (CRITICAL)
     is_honeypot = False  # Simulated
     if is_honeypot:
         findings.append("🚨 HONEYPOT DETECTED - Cannot sell tokens")
@@ -133,10 +125,10 @@ async def check_token_security(token_address: str, chain: str) -> Dict:
 
 
 def analyze_token_name(token_address: str) -> Dict:
-    """Analyze token name for scam indicators"""
-
-    print(f"Token Address: {token_address}")
-
+    """
+    Analyze token name for scam indicators
+    NOTE: Using simulated data for demo
+    """
     # In production, fetch actual token name/symbol from blockchain
     token_name = "SafeMoonRocket"  # Simulated
     token_symbol = "SMR"  # Simulated
@@ -211,7 +203,7 @@ def generate_recommendations(findings: List[str], risk_level: str) -> List[str]:
     finding_text = " ".join(findings).lower()
 
     if "honeypot" in finding_text:
-        recommendations.append("This is a HONEYPOT - you cannot sell these tokens")
+        recommendations.append("⚠️ This is a HONEYPOT - you CANNOT sell these tokens")
 
     if "liquidity" in finding_text:
         recommendations.append("Low liquidity = high slippage and exit difficulty")
@@ -231,7 +223,7 @@ def generate_recommendations(findings: List[str], risk_level: str) -> List[str]:
 @fraud_agent.on_message(model=TokenAnalysisRequest)
 async def analyze_token(ctx: Context, sender: str, msg: TokenAnalysisRequest):
     """Perform comprehensive fraud analysis on a token"""
-    ctx.logger.info(f"Analyzing token {msg.token_address} on {msg.chain}")
+    ctx.logger.info(f"🔍 Analyzing token {msg.token_address} on {msg.chain}")
 
     try:
         # Run security checks
@@ -265,7 +257,7 @@ async def analyze_token(ctx: Context, sender: str, msg: TokenAnalysisRequest):
         )
 
         ctx.logger.info(
-            f"Analysis complete: {risk_level} risk "
+            f"✅ Analysis complete: {risk_level} risk "
             f"(score: {total_risk_score}/100)"
         )
 
@@ -274,12 +266,12 @@ async def analyze_token(ctx: Context, sender: str, msg: TokenAnalysisRequest):
 
         # If critical, alert the Alert Agent
         if risk_level == "critical":
-            alert_agent_address = os.getenv("ALERT_AGENT_ADDRESS", "")
-            if alert_agent_address:
-                await ctx.send(alert_agent_address, report)
+            ctx.logger.warning(f"🚨 CRITICAL FRAUD DETECTED: {msg.token_address}")
+            alert_agent_address = "agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f"
+            await ctx.send(alert_agent_address, report)
 
     except Exception as e:
-        ctx.logger.error(f"Error in fraud analysis: {e}")
+        ctx.logger.error(f"❌ Error in fraud analysis: {e}")
         error_msg = ErrorResponse(
             error=str(e),
             source="fraud_detection_agent",
@@ -290,9 +282,12 @@ async def analyze_token(ctx: Context, sender: str, msg: TokenAnalysisRequest):
 
 @fraud_agent.on_event("startup")
 async def startup(ctx: Context):
-    ctx.logger.info("Fraud Detection Agent started!")
-    ctx.logger.info(f"Agent address: {fraud_agent.address}")
-    ctx.logger.info("Ready to analyze tokens for fraud indicators")
+    ctx.logger.info("=" * 60)
+    ctx.logger.info("🕵️  DeFiGuard Fraud Detection Agent Started!")
+    ctx.logger.info(f"📍 Agent Address: {fraud_agent.address}")
+    ctx.logger.info("☁️  Running on Agentverse")
+    ctx.logger.info("🔍 Ready to analyze tokens for fraud indicators")
+    ctx.logger.info("=" * 60)
 
 
 if __name__ == "__main__":
