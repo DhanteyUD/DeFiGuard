@@ -1,25 +1,17 @@
-"""
-DeFiGuard Portfolio Monitor Agent - Agentverse Deployment Version
-This is a standalone, self-contained version ready for Agentverse deployment
-"""
-
 from uagents import Agent, Context, Model
-from uagents.setup import fund_agent_if_low
 from datetime import datetime, timezone
 from typing import List, Dict
-import os
+from web3 import Web3
 import aiohttp
 import asyncio
 
-# ============================================
-# DATA MODELS
-# ============================================
 
 class Portfolio(Model):
     user_id: str
     wallets: List[str]
     chains: List[str]
     timestamp: str
+
 
 class AssetBalance(Model):
     token: str
@@ -28,6 +20,7 @@ class AssetBalance(Model):
     chain: str
     price: float
     change_24h: float
+
 
 class PortfolioSnapshot(Model):
     user_id: str
@@ -40,36 +33,16 @@ class PortfolioSnapshot(Model):
 class MessageResponse(Model):
     message: str
 
-# ============================================
-# AGENT CONFIGURATION (AGENTVERSE)
-# ============================================
 
-# Create Portfolio Monitor Agent for Agentverse
-# Note: No port or endpoint - uses mailbox instead
 portfolio_agent = Agent(
     name="portfolio_monitor",
-    seed=os.getenv("PORTFOLIO_AGENT_SEED"), # Set this in Agentverse UI
-    mailbox="https://agentverse.ai/mailbox"  # Required for Agentverse
+    mailbox=True  # type: ignore[arg-type]
 )
-
-# Fund agent (will use Agentverse wallet)
-fund_agent_if_low(str(portfolio_agent.wallet.address()))
-
-# ============================================
-# STORAGE
-# ============================================
-
-# In-memory storage (Agentverse agents restart, so use external DB in production)
-portfolios_db = {}
-snapshots_db = []
 
 print(f"Portfolio Monitor Agent Address: {portfolio_agent.address}")
 
-# ============================================
-# HELPER FUNCTIONS
-# ============================================
 
-async def fetch_token_price(token_symbol: str) -> Dict:
+async def fetch_token_price(token_symbol: str) -> Dict:  # type: ignore[arg-type]
     """Fetch token price from CoinGecko API"""
     url = "https://api.coingecko.com/api/v3/simple/price"
     params = {
@@ -90,38 +63,91 @@ async def fetch_token_price(token_symbol: str) -> Dict:
                     }
     except Exception as e:
         print(f"Error fetching price: {e}")
+        return {"price": 0, "change_24h": 0}
 
-    return {"price": 0, "change_24h": 0}
 
 async def get_wallet_balance(wallet: str, chain: str) -> List[Dict]:
     """
-    Get wallet balances
-    NOTE: Using demo data for hackathon
-    In production, integrate with Web3 providers
+    Get real wallet balances using Web3
     """
+    chain_rpc = {
+        "ethereum": "https://mainnet.infura.io/v3/YOUR_INFURA_KEY",
+        "bsc": "https://bsc-dataseed.binance.org/",
+        "polygon": "https://polygon-rpc.com"
+    }
 
-    print(f"Fetching wallet balances for {wallet}")
+    rpc_url = chain_rpc.get(chain.lower())
+    if not rpc_url:
+        raise ValueError(f"No RPC URL configured for chain {chain}")
 
+    web3 = Web3(Web3.HTTPProvider(rpc_url))
+    wallet_checksum = Web3.to_checksum_address(wallet)
 
-    # Demo data - replace with actual blockchain queries
-    demo_balances = [
-        {
-            "token": "ethereum",
-            "symbol": "ETH",
-            "balance": 2.5,
-            "chain": chain
-        },
-        {
-            "token": "usd-coin",
-            "symbol": "USDC",
-            "balance": 5000,
-            "chain": chain
+    if not web3.isConnected():
+        raise ConnectionError(f"Unable to connect to {chain} RPC")
+
+    # Get native balance (ETH, BNB, MATIC)
+    native_balance = web3.eth.get_balance(wallet_checksum)
+    native_balance_eth = web3.fromWei(native_balance, "ether")
+
+    balances = [{
+        "token": chain.lower(),
+        "symbol": "ETH" if chain.lower() == "ethereum" else chain.upper(),
+        "balance": float(native_balance_eth),
+        "chain": chain
+    }]
+
+    # Optional: Add ERC20 token balances using contract ABI
+    # Example for USDC
+    erc20_tokens = {
+        "ethereum": {
+            "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
         }
-    ]
+    }
 
-    # Fetch real prices
+    if chain.lower() in erc20_tokens:
+        for symbol, addr in erc20_tokens[chain.lower()].items():
+            contract = web3.eth.contract(address=addr, abi=[
+                {
+                    "constant": True,
+                    "inputs": [{"name": "_owner", "type": "address"}],
+                    "name": "balanceOf",
+                    "outputs": [{"name": "balance", "type": "uint256"}],
+                    "type": "function"
+                }
+            ])
+            token_balance = contract.functions.balanceOf(wallet).call()
+            decimals = 6 if symbol == "USDC" else 18
+            balances.append({
+                "token": symbol,
+                "symbol": symbol,
+                "balance": token_balance / (10 ** decimals),
+                "chain": chain
+            })
+
+    #     print(f"Fetching wallet balances for {wallet}")
+    #
+    #
+    #     # Demo data - replace with actual blockchain queries
+    #     demo_balances = [
+    #         {
+    #             "token": "ethereum",
+    #             "symbol": "ETH",
+    #             "balance": 2.5,
+    #             "chain": chain
+    #         },
+    #         {
+    #             "token": "usd-coin",
+    #             "symbol": "USDC",
+    #             "balance": 5000,
+    #             "chain": chain
+    #         }
+    #     ]
+    #
+
+    # Fetch USD prices for all tokens
     enriched_balances = []
-    for asset in demo_balances:
+    for asset in balances:
         price_data = await fetch_token_price(asset["token"])
         enriched_balances.append({
             "token": asset["symbol"],
@@ -133,6 +159,7 @@ async def get_wallet_balance(wallet: str, chain: str) -> List[Dict]:
         })
 
     return enriched_balances
+
 
 def calculate_risk_score(assets: List[Dict]) -> float:
     """Calculate basic risk score (0-1)"""
@@ -155,40 +182,52 @@ def calculate_risk_score(assets: List[Dict]) -> float:
 
     return min(risk_score, 1.0)
 
-# ============================================
-# MESSAGE HANDLERS
-# ============================================
+
+async def add_portfolio_key(ctx: Context, key: str):
+    """Add portfolio key to the master list"""
+    keys = ctx.storage.get("portfolio_keys") or []
+    if key not in keys:
+        keys.append(key)
+        ctx.storage.set("portfolio_keys", keys)
+
+
+async def get_all_portfolios(ctx: Context) -> Dict[str, dict]:
+    """Fetch all portfolios"""
+    keys = ctx.storage.get("portfolio_keys") or []
+    portfolios = {}
+    for key in keys:
+        value = ctx.storage.get(key)
+        if value:
+            portfolios[key] = value
+    return portfolios
+
 
 @portfolio_agent.on_message(model=Portfolio)
 async def register_portfolio(ctx: Context, sender: str, msg: Portfolio):
     """Register a new portfolio for monitoring"""
     ctx.logger.info(f"📝 Registering portfolio for user: {msg.user_id}")
 
-    # Store portfolio
-    portfolios_db[msg.user_id] = {
+    ctx.storage.set(f"portfolio_{msg.user_id}", {
         "wallets": msg.wallets,
         "chains": msg.chains,
         "registered_at": msg.timestamp,
         "owner": sender
-    }
+    })
 
-    # Send confirmation
     await ctx.send(sender, MessageResponse(message=f"Portfolio registered for {msg.user_id}"))
-
-    # Trigger initial snapshot
     await scan_portfolio(ctx, msg.user_id)
+
 
 async def scan_portfolio(ctx: Context, user_id: str):
     """Scan portfolio and create snapshot"""
-    if user_id not in portfolios_db:
+    portfolio = ctx.storage.get(f"portfolio_{user_id}")
+    if not portfolio:
         ctx.logger.warning(f"Portfolio {user_id} not found")
         return
 
-    portfolio = portfolios_db[user_id]
     all_assets = []
     total_value = 0
 
-    # Scan each wallet on each chain
     for wallet in portfolio["wallets"]:
         for chain in portfolio["chains"]:
             try:
@@ -198,10 +237,8 @@ async def scan_portfolio(ctx: Context, user_id: str):
             except Exception as e:
                 ctx.logger.error(f"Error scanning {wallet} on {chain}: {e}")
 
-    # Calculate risk score
     risk_score = calculate_risk_score(all_assets)
 
-    # Create snapshot
     snapshot = {
         "user_id": user_id,
         "total_value_usd": total_value,
@@ -210,54 +247,51 @@ async def scan_portfolio(ctx: Context, user_id: str):
         "risk_score": risk_score
     }
 
-    snapshots_db.append(snapshot)
+    user_snapshots = ctx.storage.get(f"snapshots_{user_id}") or []
+    user_snapshots.append(snapshot)
+    ctx.storage.set(f"snapshots_{user_id}", user_snapshots)
 
     ctx.logger.info(
         f"📊 Portfolio snapshot created: "
         f"${total_value:.2f}, Risk: {risk_score:.2%}"
     )
 
-    # Send to Risk Analysis Agent (configure address in Agentverse)
-    # RISK_AGENT_ADDRESS = "agent1qz3y..."  # Set this after deploying Risk Agent
-    # if RISK_AGENT_ADDRESS:
-    #     await ctx.send(RISK_AGENT_ADDRESS, snapshot)
+    risk_agent_address = "agent1qwwc3jwx0x6z0sk07029n9ngztsrapcc0ngdwy8swzq50tt7t0nf726tmkm"
+    if risk_agent_address:
+        await ctx.send(risk_agent_address, snapshot)  # type: ignore[arg-type]
 
     return snapshot
 
-# ============================================
-# PERIODIC MONITORING
-# ============================================
 
 @portfolio_agent.on_interval(period=300.0)  # Every 5 minutes
 async def monitor_portfolios(ctx: Context):
     """Periodically scan all registered portfolios"""
-    if not portfolios_db:
+    portfolios = await get_all_portfolios(ctx)
+
+    if not portfolios:
         return
 
-    ctx.logger.info(f"🔄 Monitoring {len(portfolios_db)} portfolio(s)...")
+    ctx.logger.info(f"🔄 Monitoring {len(portfolios)} portfolio(s)...")
 
-    for user_id in list(portfolios_db.keys()):
+    for key, _ in portfolios.items():
+        user_id = key.replace("portfolio_", "")
         try:
             await scan_portfolio(ctx, user_id)
-            await asyncio.sleep(2)  # Rate limiting
+            await asyncio.sleep(2)
         except Exception as e:
             ctx.logger.error(f"Error monitoring {user_id}: {e}")
 
-# ============================================
-# STARTUP
-# ============================================
 
 @portfolio_agent.on_event("startup")
 async def startup(ctx: Context):
+    portfolios = await get_all_portfolios(ctx)
     ctx.logger.info("=" * 60)
     ctx.logger.info("🛡️  DeFiGuard Portfolio Monitor Agent Started!")
     ctx.logger.info(f"📍 Agent Address: {portfolio_agent.address}")
+    ctx.logger.info(f"Loaded {len(portfolios)} portfolios from storage")
     ctx.logger.info("☁️  Running on Agentverse")
     ctx.logger.info("=" * 60)
 
-# ============================================
-# RUN AGENT
-# ============================================
 
 if __name__ == "__main__":
     portfolio_agent.run()

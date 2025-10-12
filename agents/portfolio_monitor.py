@@ -1,5 +1,5 @@
 from uagents import Agent, Context, Model
-from uagents.setup import fund_agent_if_low
+# from uagents.setup import fund_agent_if_low
 from datetime import datetime, timezone
 from typing import List, Dict
 import os
@@ -46,11 +46,10 @@ portfolio_agent = Agent(
     seed=os.getenv("PORTFOLIO_AGENT_SEED", "portfolio_demo_seed"),
     port=8000,
     endpoint=["http://localhost:8000/submit"],
-    # mailbox=True  # Enable for Agentverse: "https://agentverse.ai/mailbox"
+    mailbox=False # type: ignore[arg-type]
 )
 
-# Fund agent
-fund_agent_if_low(str(portfolio_agent.wallet.address()))
+# fund_agent_if_low(str(portfolio_agent.wallet.address()))
 
 # In-memory storage (use database in production)
 portfolios_db = {}
