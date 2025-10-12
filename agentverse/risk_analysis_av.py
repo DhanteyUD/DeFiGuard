@@ -299,7 +299,7 @@ async def analyze_risk(ctx: Context, sender: str, msg: RiskAnalysisRequest):
         await ctx.send(sender, report)
 
 
-        alert_agent_address = ""
+        alert_agent_address = "agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f"
         if should_alert and alert_agent_address:
             await ctx.send(alert_agent_address, report)
 
