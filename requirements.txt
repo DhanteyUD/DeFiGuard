@@ -5,6 +5,9 @@ uagents-ai-engine==0.4.0
 # MeTTa/Hyperon
 hyperon>=0.2.8
 
+# ASI:One Agent
+openai==2.3.0
+
 # Web3 & Blockchain
 web3==6.11.0
 cosmpy==0.9.0

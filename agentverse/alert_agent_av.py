@@ -1,6 +1,4 @@
 from uagents import Agent, Context, Model, Protocol
-from uagents.setup import fund_agent_if_low
-from openai import OpenAI
 from uagents_core.contrib.protocols.chat import (
     ChatAcknowledgement,
     ChatMessage,
@@ -12,14 +10,8 @@ from uagents_core.contrib.protocols.chat import (
 from datetime import datetime, timezone
 from uuid import uuid4
 from pydantic import UUID4
-from typing import List
-import os
-from dotenv import load_dotenv
+from typing import List, Dict
 
-load_dotenv()
-
-
-# Data Models
 class AlertNotification(Model):
     user_id: str
     overall_risk: str
@@ -42,41 +34,58 @@ class ChatAckWrapper(Model):
     timestamp: str
 
 
-client = OpenAI(
-    # By default, we are using the ASI:One LLM endpoint and model
-    base_url='https://api.asi1.ai/v1',
-
-    # You can get an ASI:One api key by creating an account at https://asi1.ai/dashboard/api-keys
-    api_key=os.getenv("ASI_ONE_API_KEY", "asi_one_api_key"),
-)
-
-# Create Alert Agent
 alert_agent = Agent(
     name="alert_system",
-    seed=os.getenv("ALERT_AGENT_SEED", "alert_demo_seed"),
-    port=8002,
-    endpoint=["http://localhost:8002/submit"],
-    mailbox=False,  # type: ignore[arg-type] # Required for ASI:One
-    # publish_agent_details = True # type: ignore[arg-type] # Required for ASI:One
+    mailbox=True,  # type: ignore[arg-type]
+    publish_agent_details = True  # type: ignore[arg-type]
 )
-
-fund_agent_if_low(str(alert_agent.wallet.address()))
 
 print(f"Alert Agent Address: {alert_agent.address}")
 
-# Initialize chat protocol for ASI:One
+
 chat_proto = Protocol(spec=chat_protocol_spec) # type: ignore[arg-type]
 
-# Alert history (use database in production)
-alert_history = []
-active_sessions = {}
+def add_alert_key(ctx: Context, key: str):
+    """Add alert key to master list"""
+    keys = ctx.storage.get("alert_keys") or []
+    if key not in keys:
+        keys.append(key)
+        ctx.storage.set("alert_keys", keys)
 
 
-# Helper functions
+def get_all_alerts(ctx: Context) -> Dict[str, dict]:
+    """Fetch all alerts"""
+    keys = ctx.storage.get("alert_keys") or []
+    alerts = {}
+    for key in keys:
+        value = ctx.storage.get(key)
+        if value:
+            alerts[key] = value
+    return alerts
+
+
+def add_active_session(ctx: Context, user_id: str, address: str):
+    """Track active chat session"""
+    sessions = ctx.storage.get("active_sessions") or {}
+    sessions[user_id] = address
+    ctx.storage.set("active_sessions", sessions)
+
+
+def remove_active_session(ctx: Context, user_id: str):
+    """Remove active chat session"""
+    sessions = ctx.storage.get("active_sessions") or {}
+    if user_id in sessions:
+        del sessions[user_id]
+        ctx.storage.set("active_sessions", sessions)
+
+
+def get_active_sessions(ctx: Context) -> Dict[str, str]:
+    """Retrieve all active sessions"""
+    return ctx.storage.get("active_sessions") or {}
+
+
 def format_alert_message(alert: AlertNotification) -> str:
     """Format alert into human-readable message"""
-
-    # Risk emoji
     risk_emoji = {
         "low": "🟢",
         "medium": "🟡",
@@ -114,15 +123,15 @@ def create_text_chat(text: str) -> ChatMessage:
     )
 
 
-# Message Handlers
 @alert_agent.on_message(model=AlertNotification)
 async def handle_alert(ctx: Context, sender: str, msg: AlertNotification):
     """Handle incoming alert from Risk Analysis Agent"""
     ctx.logger.info(
-        f"Received {msg.overall_risk} risk alert for user: {msg.user_id}"
+        f"🚨 Received {msg.overall_risk} risk alert for: {msg.user_id}"
     )
 
-    # Store in history
+    # Store in persistent storage
+    key = f"alert_{msg.user_id}_{msg.timestamp}"
     alert_record = {
         "user_id": msg.user_id,
         "risk_level": msg.overall_risk,
@@ -131,29 +140,31 @@ async def handle_alert(ctx: Context, sender: str, msg: AlertNotification):
         "concerns": msg.concerns,
         "recommendations": msg.recommendations
     }
-    alert_history.append(alert_record)
+
+    ctx.storage.set(key, alert_record)
+    add_alert_key(ctx, key)
 
     # Format message
     alert_message = format_alert_message(msg)
 
     # Send to user if they have an active session
-    if msg.user_id in active_sessions:
-        user_address = active_sessions[msg.user_id]
+    sessions = get_active_sessions(ctx)
+    if msg.user_id in sessions:
+        user_address = sessions[msg.user_id]
         chat_msg = create_text_chat(alert_message)
         await ctx.send(user_address, ChatWrapper(message=chat_msg))
-        ctx.logger.info(f"Alert sent to user {msg.user_id}")
+        ctx.logger.info(f"✅ Alert sent to user {msg.user_id}")
     else:
-        ctx.logger.info(f"No active session for user {msg.user_id}")
+        ctx.logger.info(f"ℹ️  No active session for {msg.user_id}")
 
     # Acknowledge receipt
     await ctx.send(sender, Acknowledgement(message=f"Alert processed for {msg.user_id}"))
 
 
-# Chat Protocol Handlers
 @chat_proto.on_message(ChatMessage) # type: ignore[arg-type]
 async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     """Handle incoming chat messages from ASI:One"""
-    ctx.logger.info(f"Received chat message from {sender}")
+    ctx.logger.info(f"💬 Received chat message from {sender}")
 
     # Send acknowledgement
     await ctx.send(
@@ -167,60 +178,51 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     # Process message content
     for item in msg.content:
         if isinstance(item, StartSessionContent):
-            ctx.logger.info(f"Chat session started with {sender}")
-            active_sessions[sender] = sender
+            ctx.logger.info(f"🟢 Chat session started with {sender}")
+            add_active_session(ctx, sender, sender)
 
-            # Send welcome message
             welcome_msg = (
-                "👋 Welcome to DeFiGuard Alert System!\n\n"
+                "👋 **Welcome to DeFiGuard Alert System!**\n\n"
                 "I monitor your DeFi portfolio and send real-time risk alerts.\n\n"
-                "Commands:\n"
-                "- `status` - Check current portfolio risk\n"
-                "- `history` - View recent alerts\n"
-                "- `help` - Show this message\n\n"
-                "Your portfolio is being monitored 24/7."
+                "**Commands:**\n"
+                "• `status` - Check current portfolio risk\n"
+                "• `history` - View recent alerts (last 5)\n"
+                "• `help` - Show this message\n\n"
+                "Your portfolio is being monitored 24/7. "
+                "You'll receive automatic alerts when risks are detected."
             )
             response = create_text_chat(welcome_msg)
             await ctx.send(sender, response)  # type: ignore[arg-type]
 
-
         elif isinstance(item, TextContent):
-            ctx.logger.info(f"Text message: {item.text}")
+            ctx.logger.info(f"📝 Text message: {item.text}")
 
-            # Parse command
             command = item.text.strip().lower()
+            all_alerts = get_all_alerts(ctx)
+            user_alerts = [
+                a for a in all_alerts.values() if a.get("user_id") == sender
+            ]
 
             if command == "status":
-                # Get latest risk status
-                user_alerts = [
-                    a for a in alert_history
-                    if a.get("user_id") == sender
-                ]
-
                 if user_alerts:
                     latest = user_alerts[-1]
                     status_msg = (
                         f"📊 **Current Portfolio Status**\n\n"
-                        f"Risk Level: {latest['risk_level'].upper()}\n"
-                        f"Risk Score: {latest['risk_score']:.2%}\n"
-                        f"Last Updated: {latest['timestamp']}\n\n"
+                        f"**Risk Level:** {latest['risk_level'].upper()}\n"
+                        f"**Risk Score:** {latest['risk_score']:.2%}\n"
+                        f"**Last Updated:** {latest['timestamp']}\n\n"
                         f"Type `history` for more details."
                     )
                 else:
                     status_msg = (
-                        "No portfolio data available yet. "
+                        "No portfolio data available yet.\n\n"
                         "Make sure your portfolio is registered with DeFiGuard."
                     )
 
                 await ctx.send(sender, create_text_chat(status_msg))  # type: ignore[arg-type]
 
             elif command == "history":
-                # Get alert history
-                user_alerts = [
-                                  a for a in alert_history
-                                  if a.get("user_id") == sender
-                              ][-5:]  # Last 5 alerts
-
+                user_alerts = user_alerts[-5:]
                 if user_alerts:
                     history_msg = "📜 **Recent Alerts**\n\n"
                     for i, alert in enumerate(reversed(user_alerts), 1):
@@ -242,43 +244,44 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     "• `history` - View recent alerts (last 5)\n"
                     "• `help` - Show this message\n\n"
                     "**Risk Levels:**\n"
-                    "🟢 Low - Portfolio is healthy\n"
-                    "🟡 Medium - Monitor closely\n"
-                    "🟠 High - Action recommended\n"
-                    "🔴 Critical - Immediate action needed\n\n"
+                    "🟢 **Low** - Portfolio is healthy\n"
+                    "🟡 **Medium** - Monitor closely\n"
+                    "🟠 **High** - Action recommended\n"
+                    "🔴 **Critical** - Immediate action needed\n\n"
                     "You'll receive automatic alerts when risks are detected."
                 )
                 await ctx.send(sender, create_text_chat(help_msg))  # type: ignore[arg-type]
 
             else:
-                # Unknown command
                 response_msg = (
-                    f"Command '{item.text}' not recognized.\n"
+                    f"Command '{item.text}' not recognized.\n\n"
                     "Type `help` to see available commands."
                 )
                 await ctx.send(sender, create_text_chat(response_msg))  # type: ignore[arg-type]
 
         elif isinstance(item, EndSessionContent):
-            ctx.logger.info(f"Chat session ended with {sender}")
-            if sender in active_sessions:
-                del active_sessions[sender]
+            ctx.logger.info(f"🔴 Chat session ended with {sender}")
+            remove_active_session(ctx, sender)
 
 
-@chat_proto.on_message(ChatAcknowledgement) # type: ignore[arg-type]
+@chat_proto.on_message(ChatAcknowledgement)  # type: ignore[arg-type]
 async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledgement):
     """Handle message acknowledgements"""
     ctx.logger.info(f"Message {msg.acknowledged_msg_id} acknowledged by {sender}")
 
 
-# Include chat protocol
+# IMPORTANT: This enables ASI:One integration
 alert_agent.include(chat_proto, publish_manifest=True)
 
 
 @alert_agent.on_event("startup")
 async def startup(ctx: Context):
-    ctx.logger.info("Alert Agent started!")
-    ctx.logger.info(f"Agent address: {alert_agent.address}")
-    ctx.logger.info("ASI:One Chat Protocol enabled ✓")
+    ctx.logger.info("=" * 60)
+    ctx.logger.info("🚨 DeFiGuard Alert Agent Started!")
+    ctx.logger.info(f"📍 Agent Address: {alert_agent.address}")
+    ctx.logger.info("☁️  Running on Agentverse")
+    ctx.logger.info("💬 ASI:One Chat Protocol enabled ✓")
+    ctx.logger.info("=" * 60)
 
 
 if __name__ == "__main__":
