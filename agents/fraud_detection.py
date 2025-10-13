@@ -36,7 +36,7 @@ fraud_agent = Agent(
     seed=os.getenv("FRAUD_AGENT_SEED", "fraud_demo_seed"),
     port=8004,
     endpoint=["http://localhost:8004/submit"],
-    mailbox=False # type: ignore[arg-type]
+    # mailbox=False # type: ignore[arg-type]
 )
 
 # fund_agent_if_low(str(fraud_agent.wallet.address()))
