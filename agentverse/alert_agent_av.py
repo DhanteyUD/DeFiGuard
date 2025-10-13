@@ -43,7 +43,7 @@ alert_agent = Agent(
 print(f"Alert Agent Address: {alert_agent.address}")
 
 
-chat_proto = Protocol(spec=chat_protocol_spec) # type: ignore[arg-type]
+chat_proto = Protocol(spec=chat_protocol_spec)
 
 def add_alert_key(ctx: Context, key: str):
     """Add alert key to master list"""
