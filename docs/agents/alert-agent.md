@@ -94,7 +94,7 @@ Sends to user via ASI:One chat:
 
 ### Finding the Agent
 
-1. Open ASI:One chat interface: https://asione.fetch.ai
+1. Open ASI:One chat interface: https://chat.agentverse.ai/
 2. Search for "DeFiGuard" or use agent address
 3. Start chatting!
 

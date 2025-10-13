@@ -32,6 +32,7 @@ def print_banner():
     print(f"  ✓ Fraud Detection     : {fraud_agent.address[:16]}...")
     print("\n  🚀 All agents initialized successfully!")
     print("  🌐 ASI:One Chat Protocol enabled on Alert Agent")
+    print("  🧠 SingularityNET MeTTa integration: ACTIVE")
     print("\n" + "=" * 60 + "\n")
 
 

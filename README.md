@@ -12,14 +12,14 @@
 ## 📋 Table of Contents
 
 - [Demo Video](#-demo-video)
-- [Architecture](#️-architecture)
+- [Architecture](#-architecture)
 - [ASI Alliance Technologies](#-asi-alliance-technologies)
 - [Features](#-features)
 - [Agent Addresses](#-agent-addresses)
 - [Quick Start](#-quick-start)
-- [Usage](#-using-defiguard)
-- [Risk Methodology](#-risk-scoring-methodology)
-- [Technologies](#️-technologies-used)
+- [Using DeFiGuard](#-using-defiguard)
+- [Risk Scoring Methodology](#-risk-scoring-methodology)
+- [Technologies Used](#-technologies-used)
 - [Documentation](#-documentation)
 - [Contributing](#-contributing)
 - [License](#-license)
@@ -35,33 +35,33 @@
 ## 🏗️ Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                     USER INTERFACE                            │
-│                    (ASI:One Chat)                             │
-└────────────────────────┬─────────────────────────────────────┘
-                         │
-                         ▼
-            ┌────────────────────────┐
-            │     Alert Agent        │ ◄───── Real-time Notifications
-            │   (Chat Protocol)      │
-            └────────┬───────────────┘
-                     │
-         ┌───────────┼───────────┬──────────┐
-         ▼           ▼           ▼          ▼
-  ┌──────────┐ ┌──────────┐ ┌─────────┐ ┌──────────┐
-  │Portfolio │ │   Risk   │ │ Market  │ │  Fraud   │
-  │ Monitor  │ │ Analysis │ │  Data   │ │Detection │
-  │  Agent   │ │  Agent   │ │  Agent  │ │  Agent   │
-  └────┬─────┘ └────┬─────┘ └────┬────┘ └────┬─────┘
-       │            │            │           │
-       └────────────┴────────────┴───────────┘
-                         │
-                         ▼
-              ┌─────────────────────┐
-              │  MeTTa Knowledge    │
-              │  Graph (50+ assets, │
-              │  25+ risk rules)    │
-              └─────────────────────┘
+    ┌────────────────────────────────────────────────┐
+    │                 USER INTERFACE                 │
+    │                 (ASI:One Chat)                 │
+    └──────────────────────┬─────────────────────────┘
+                           │
+                           ▼
+              ┌────────────────────────┐
+              │       Alert Agent      │ ◄────── Real-time Notifications
+              │     (Chat Protocol)    │
+              └────────┬───────────────┘
+                       │
+           ┌───────────┼───────────┬──────────┐
+           ▼           ▼           ▼          ▼
+    ┌──────────┐ ┌──────────┐ ┌─────────┐ ┌──────────┐
+    │Portfolio │ │   Risk   │ │ Market  │ │  Fraud   │
+    │ Monitor  │ │ Analysis │ │  Data   │ │ Detection│
+    │  Agent   │ │  Agent   │ │  Agent  │ │  Agent   │
+    └────┬─────┘ └────┬─────┘ └────┬────┘ └────┬─────┘
+         │            │            │           │
+         └────────────┴────────────┴───────────┘
+                             │
+                             ▼
+    ┌────────────────────────────────────────────────┐
+    │              MeTTa Knowledge Graph             │
+    │           (50+ assets, 25+ risk rules)         │
+    └────────────────────────────────────────────────┘   
+                   
 ```
 
 ---
@@ -72,13 +72,13 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 
 ### ✅ Fetch.ai Integration
 
-| Component | Usage in DeFiGuard | Benefits |
-|-----------|-------------------|----------|
-| **uAgents Framework** | All 5 agents built with uAgents | Autonomous agent development |
-| **Agentverse** | Cloud deployment platform | Scalable, always-on infrastructure |
-| **ASI:One Chat Protocol** | Alert agent user interface | Natural language interaction |
-| **Agent Communication** | Inter-agent messaging | Decentralized coordination |
-| **Bureau System** | Multi-agent orchestration | Centralized management |
+| Component                 | Usage in DeFiGuard              | Benefits                           |
+|---------------------------|---------------------------------|------------------------------------|
+| **uAgents Framework**     | All 5 agents built with uAgents | Autonomous agent development       |
+| **Agentverse**            | Cloud deployment platform       | Scalable, always-on infrastructure |
+| **ASI:One Chat Protocol** | Alert agent user interface      | Natural language interaction       |
+| **Agent Communication**   | Inter-agent messaging           | Decentralized coordination         |
+| **Bureau System**         | Multi-agent orchestration       | Centralized management             |
 
 **Implementation:**
 - 5 specialized agents communicating autonomously
@@ -88,12 +88,12 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 
 ### ✅ SingularityNET Integration
 
-| Component | Usage in DeFiGuard | Benefits |
-|-----------|-------------------|----------|
-| **MeTTa Knowledge Graphs** | Risk analysis reasoning engine | Declarative AI logic |
-| **Knowledge Base** | 50+ asset classifications, 25+ rules | Explainable decisions |
-| **Pattern Matching** | Fraud and risk detection | Intelligent reasoning |
-| **Logical Inference** | Portfolio risk assessment | Composable rules |
+| Component                  | Usage in DeFiGuard                   | Benefits              |
+|----------------------------|--------------------------------------|-----------------------|
+| **MeTTa Knowledge Graphs** | Risk analysis reasoning engine       | Declarative AI logic  |
+| **Knowledge Base**         | 50+ asset classifications, 25+ rules | Explainable decisions |
+| **Pattern Matching**       | Fraud and risk detection             | Intelligent reasoning |
+| **Logical Inference**      | Portfolio risk assessment            | Composable rules      |
 
 **Implementation:**
 - MeTTa knowledge graph with comprehensive risk ontology
@@ -105,13 +105,13 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 
 ### 🔗 Why Both Technologies?
 
-| Aspect | Fetch.ai | SingularityNET |
-|--------|----------|----------------|
-| **Purpose** | Agent infrastructure | AI reasoning |
-| **Role** | Communication & orchestration | Knowledge & intelligence |
-| **In DeFiGuard** | Agents talk to each other | Agents make smart decisions |
-| **Analogy** | Nervous system | Brain |
-| **Example** | Portfolio Monitor → Risk Analyzer | Risk rules in MeTTa graph |
+| Aspect           | Fetch.ai                          | SingularityNET              |
+|------------------|-----------------------------------|-----------------------------|
+| **Purpose**      | Agent infrastructure              | AI reasoning                |
+| **Role**         | Communication & orchestration     | Knowledge & intelligence    |
+| **In DeFiGuard** | Agents talk to each other         | Agents make smart decisions |
+| **Analogy**      | Nervous system                    | Brain                       |
+| **Example**      | Portfolio Monitor → Risk Analyzer | Risk rules in MeTTa graph   |
 
 **Together**: Fetch.ai provides the **communication layer**, SingularityNET provides the **intelligence layer**. This combination creates truly autonomous, intelligent agents.
 
@@ -163,52 +163,31 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 
 ---
 
-## 🤖 ASI Alliance Technologies
-
-### Fetch.ai Integration ✅
-
-- **uAgents Framework**: All 5 agents built with Fetch.ai's uAgents
-- **Agentverse Deployment**: Cloud-hosted agent infrastructure
-- **ASI:One Chat Protocol**: Natural language interface for alerts
-- **Inter-Agent Communication**: Decentralized message passing
-- **Bureau System**: Multi-agent orchestration
-
-### SingularityNET Integration ✅
-
-- **MeTTa Knowledge Graphs**: Declarative AI reasoning for risk analysis
-- **Knowledge Base**: 50+ asset classifications, 25+ risk rules
-- **Explainable AI**: Every decision traceable to knowledge graph
-- **Pattern Matching**: Intelligent fraud and risk detection
-- **Extensible Rules**: Domain experts can update without code changes
-
-**📚 Detailed Integration**: See [METTA_INTEGRATION.md](METTA_INTEGRATION.md)
-
-### Why Both Technologies?
-
-| Aspect | Fetch.ai | SingularityNET |
-|--------|----------|----------------|
-| **Purpose** | Agent infrastructure | AI reasoning |
-| **Strength** | Communication & orchestration | Knowledge & intelligence |
-| **In DeFiGuard** | Agents talk to each other | Agents make smart decisions |
-| **Example** | Portfolio Monitor → Risk Analyzer | Risk rules in MeTTa graph |
-
-**Together**: Fetch.ai provides the **nervous system** (communication), SingularityNET provides the **brain** (reasoning).
-
----
-
 ## 🤖 Agent Addresses
 
-All agents deployed on **Agentverse** (Fetch.ai Testnet):
+Local agents (community version): See [agents](agents)
 
-| Agent | Address | Port | Status |
-|-------|---------|------|--------|
-| **Portfolio Monitor** | `agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f` | 8000 | ✅ Active |
-| **Risk Analysis** | `agent1qtrn82fz9tnspwudzrjr7mm9ncwvavjse5xcv7j9t06gajmdxq0yg38dyx5` | 8001 | ✅ Active |
-| **Alert System** | `agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l` | 8002 | ✅ Active + Chat |
-| **Market Data** | `agent1qgwdvuucfhpvucqdru0gnrwc2zqf0ak5u24rvxua9flcazctmdvdsyrr8qq` | 8003 | ✅ Active |
-| **Fraud Detection** | `agent1q0x3wcul6azlcu4wy5khce9hklav28ea9f8kjqcq649rs4jat5kc7zxarn6` | 8004 | ✅ Active |
+| Agent                 | Address                                                             | Port | 
+|-----------------------|---------------------------------------------------------------------|------|
+| **Portfolio Monitor** | `agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f` | 8000 | 
+| **Risk Analysis**     | `agent1qtrn82fz9tnspwudzrjr7mm9ncwvavjse5xcv7j9t06gajmdxq0yg38dyx5` | 8001 | 
+| **Alert Agent**       | `agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l` | 8002 | 
+| **Market Data**       | `agent1qgwdvuucfhpvucqdru0gnrwc2zqf0ak5u24rvxua9flcazctmdvdsyrr8qq` | 8003 | 
+| **Fraud Detection**   | `agent1q0x3wcul6azlcu4wy5khce9hklav28ea9f8kjqcq649rs4jat5kc7zxarn6` | 8004 |
 
-**📖 Individual Agent Documentation:** See [docs/agents/](docs/agents/) for detailed README for each agent.
+
+All agents deployed on **[Agentverse](https://agentverse.ai/agents)** (Fetch.ai Testnet): See [agentverse](agentverse)
+
+
+| Agent                 | Agentverse Address                                                  | Status                   |
+|-----------------------|---------------------------------------------------------------------|--------------------------|
+| **Portfolio Monitor** | `agent1qt2fhu92p6uq3yq692drxrnx74yh7jqs0vjm65st3tz6wej6rxf7qehenpc` | ✅ Active                 |
+| **Risk Analysis**     | `agent1qwwc3jwx0x6z0sk07029n9ngztsrapcc0ngdwy8swzq50tt7t0nf726tmkm` | ✅ Active                 |
+| **Alert Agent**       | `agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f` | ✅ Active + Chat Protocol |
+| **Market Data**       | `agent1qt70kl5x938q9dlryd9tnfr3yk5z3pmaq85jrl5vkwsguhwxazdyjr29aw3` | ✅ Active                 |
+| **Fraud Detection**   | `agent1q220sdmkgn3dj2pxz38cmeer2kt335ev6vqhta3f4a0cuz4h9zcwyp5qzm5` | ✅ Active                 |
+
+**📖 Individual Agent Documentation:** See [docs/agents](docs/agents) for detailed README for each agent.
 
 ---
 
@@ -237,6 +216,7 @@ python -m venv venv
 # 3. Activate virtual environment
 # Windows:
 venv\Scripts\activate
+
 # Mac/Linux:
 source venv/bin/activate
 
@@ -269,6 +249,8 @@ FRAUD_AGENT_SEED=your_random_fraud_seed_56789012345678901
 COINGECKO_API_KEY=your_coingecko_api_key
 ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
 POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/YOUR_KEY
+BSC_RPC_URL=https://bsc-dataseed.binance.org/
+ETHERSCAN_API_KEY=YOUR_KEY
 
 # Configuration
 NETWORK=testnet
@@ -276,6 +258,8 @@ RISK_THRESHOLD=0.7
 ALERT_COOLDOWN=300
 MONITOR_INTERVAL=300
 LOG_LEVEL=INFO
+MAX_RETRIES=3
+API_TIMEOUT=30
 ```
 
 **💡 Tip:** Generate secure seeds with:
@@ -340,8 +324,8 @@ python main.py
 
 ### Method 1: Via ASI:One Chat (Recommended)
 
-1. **Open ASI:One**: https://asione.fetch.ai
-2. **Search for Agent**: Use address `agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l`
+1. **Open ASI:One**: https://asi1.ai
+2. **Search for Agent**: Use agent name `DeFiGuard alert agent` or  address `agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f`
 3. **Start Chatting**:
 
 ```
@@ -366,7 +350,13 @@ Agent: 📜 Recent Alerts
 - `history` - View recent alerts (last 5)
 - `help` - Show command reference
 
-### Method 2: Programmatic (Direct Agent Messaging)
+### Method 2: Via Agentverse AI
+
+1. **Open Agentverse AI**: https://chat.agentverse.ai/
+2. **Search for Agent**: Use agent name `DeFiGuard alert agent` or  address `agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f`
+3. **Start Chatting**:
+
+### Method 3: Programmatic (Direct Agent Messaging)
 
 ```python
 from uagents import Agent, Context, Model
@@ -423,12 +413,12 @@ Risk Score = (Concentration × 0.3) + (Volatility × 0.4) + (Asset Quality × 0.
 
 ### Risk Levels
 
-| Level | Score | Indicator | Action |
-|-------|-------|-----------|--------|
-| 🟢 **Low** | 0-30% | Portfolio is healthy | Continue monitoring |
-| 🟡 **Medium** | 30-50% | Monitor closely | Review within week |
-| 🟠 **High** | 50-70% | Action recommended | Rebalance within 24h |
-| 🔴 **Critical** | 70-100% | Immediate action | Review immediately |
+| Level           | Score   | Indicator            | Action               |
+|-----------------|---------|----------------------|----------------------|
+| 🟢 **Low**      | 0-30%   | Portfolio is healthy | Continue monitoring  |
+| 🟡 **Medium**   | 30-50%  | Monitor closely      | Review within week   |
+| 🟠 **High**     | 50-70%  | Action recommended   | Rebalance within 24h |
+| 🔴 **Critical** | 70-100% | Immediate action     | Review immediately   |
 
 ### Risk Components
 
@@ -516,24 +506,24 @@ python verify_metta.py
 
 ### Core Stack
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Python** | 3.8+ | Core language |
-| **Fetch.ai uAgents** | 0.12.0 | Agent framework |
-| **SingularityNET MeTTa** | Latest | Knowledge reasoning |
-| **Agentverse** | Cloud | Agent deployment |
-| **ASI:One** | Latest | Chat interface |
+| Technology               | Version  | Purpose             |
+|--------------------------|----------|---------------------|
+| **Python**               | ` 3.12`  | Core language       |
+| **Fetch.ai uAgents**     | `0.12.0` | Agent framework     |
+| **SingularityNET MeTTa** | Latest   | Knowledge reasoning |
+| **Agentverse**           | Cloud    | Agent deployment    |
+| **ASI:One**              | Latest   | Chat interface      |
 
 ### APIs & Libraries
 
-| Library | Purpose |
-|---------|---------|
-| `aiohttp` | Async HTTP requests |
-| `web3.py` | Blockchain interaction |
-| `hyperon` | MeTTa runtime |
-| `pydantic` | Data validation |
-| `python-dotenv` | Environment config |
-| `ccxt` | Exchange data |
+| Library         | Purpose                |
+|-----------------|------------------------|
+| `aiohttp`       | Async HTTP requests    |
+| `web3.py`       | Blockchain interaction |
+| `hyperon`       | MeTTa runtime          |
+| `pydantic`      | Data validation        |
+| `python-dotenv` | Environment config     |
+| `ccxt`          | Exchange data          |
 
 ### External APIs
 
@@ -547,7 +537,7 @@ python verify_metta.py
 
 ### Project Documentation
 
-- **[README.md](README.md)** - This file (project overview)
+> - **[README.md](README.md)** - This file (project overview)
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Agentverse deployment guide
 - **[docs/METTA_INTEGRATION.md](docs/METTA_INTEGRATION.md)** - SingularityNET MeTTa integration details
 - **[LICENSE](LICENSE)** - MIT License
@@ -558,7 +548,7 @@ Each agent has detailed documentation:
 
 - **[Portfolio Monitor](docs/agents/portfolio-monitor.md)** - Multi-chain portfolio tracking
 - **[Risk Analysis Agent](docs/agents/risk-analysis.md)** - AI-powered risk assessment with MeTTa
-- **[Alert System Agent](docs/agents/alert-system.md)** - ASI:One chat interface & notifications
+- **[Alert System Agent](docs/agents/alert-agent.md)** - ASI:One chat interface & notifications
 - **[Market Data Agent](docs/agents/market-data.md)** - Real-time price feeds & market intelligence
 - **[Fraud Detection Agent](docs/agents/fraud-detection.md)** - Scam detection & honeypot identification
 
@@ -583,7 +573,7 @@ Each agent has detailed documentation:
 
 ### 1. Portfolio Risk Management
 - Track diversification across multiple chains
-- Get alerts before major drawdowns
+- Get alerts before major draw-downs
 - Maintain healthy risk-reward ratio
 
 ### 2. Fraud Prevention
@@ -646,8 +636,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - **GitHub**: https://github.com/DhanteyUD/DeFiGuard
 - **Demo Video**: [YouTube Link](YOUR_LINK)
-- **ASI:One**: Search "DeFiGuard Alert System"
-- **Documentation**: [Full Docs](docs/)
+- **ASI:One**: Search "DeFiGuard Alert Agent"
+- **Agents Documentation**: [Full Docs](docs)
 - **Issues**: [GitHub Issues](https://github.com/DhanteyUD/DeFiGuard/issues)
 
 ---
@@ -671,15 +661,15 @@ Together, these technologies enable truly intelligent, autonomous, and explainab
 
 ## 🚀 Quick Links
 
-| Resource | Link |
-|----------|------|
-| **Live Demo** | [ASI:One Interface](https://asione.fetch.ai) |
-| **Documentation** | [docs/](docs/) |
-| **MeTTa Integration** | [METTA_INTEGRATION.md](docs/METTA_INTEGRATION.md) |
-| **Deployment Guide** | [DEPLOYMENT.md](DEPLOYMENT.md) |
-| **Agent READMEs** | [docs/agents/](docs/agents/) |
-| **Fetch.ai Docs** | https://docs.fetch.ai/ |
-| **SingularityNET Docs** | https://metta-lang.dev/ |
+| Resource                | Link                                              |
+|-------------------------|---------------------------------------------------|
+| **Live Demo**           | [ASI:One Interface](https://asi1.ai)              |
+| **Documentation**       | [docs](docs)                                      |
+| **MeTTa Integration**   | [METTA_INTEGRATION.md](docs/METTA_INTEGRATION.md) |
+| **Deployment Guide**    | [DEPLOYMENT.md](DEPLOYMENT.md)                    |
+| **Agents README**       | [docs/agents](docs/agents)                        |
+| **Fetch.ai Docs**       | https://docs.fetch.ai/                            |
+| **SingularityNET Docs** | https://metta-lang.dev/                           |
 
 ---
 
