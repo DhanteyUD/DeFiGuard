@@ -163,7 +163,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
             # Send welcome message
             welcome_msg = (
-                "👋 Welcome to DeFiGuard Alert System!\n\n"
+                "👋 Welcome to DeFiGuard Alert Agent!\n\n"
                 "I monitor your DeFi portfolio and send real-time risk alerts.\n\n"
                 "Commands:\n"
                 "- `status` - Check current portfolio risk\n"
