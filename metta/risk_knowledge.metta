@@ -1,151 +1,226 @@
-; DeFiGuard Risk Analysis Knowledge Base
+; ============================================
+; DeFiGuard Risk Knowledge Graph
+; Powered by SingularityNET MeTTa
+; ============================================
 
 ; Define types
-(: Risk Type)
 (: Asset Type)
-(: Pattern Type)
-(: Alert Type)
+(: RiskLevel Type)
+(: Token Type)
+(: Threshold Type)
 
-; Risk levels
-(: low Risk)
-(: medium Risk)
-(: high Risk)
-(: critical Risk)
+; ============================================
+; ASSET RISK CLASSIFICATIONS
+; ============================================
 
-; Asset risk profiles
-(risk-profile bitcoin low)
-(risk-profile ethereum low)
-(risk-profile usdc low)
-(risk-profile usdt low)
+; Low-risk assets (established cryptocurrencies)
+(has-risk bitcoin low)
+(has-risk btc low)
+(has-risk ethereum low)
+(has-risk eth low)
+(has-risk bnb low)
+(has-risk cardano low)
+(has-risk ada low)
+(has-risk solana low)
+(has-risk sol low)
+(has-risk polkadot low)
+(has-risk dot low)
 
-; High-risk assets
-(risk-profile meme-coin high)
-(risk-profile new-token critical)
-(risk-profile leverage-token critical)
+; Stablecoins (lowest risk)
+(has-risk usdc low)
+(has-risk usdt low)
+(has-risk dai low)
+(has-risk busd low)
+(has-risk frax low)
+(has-risk tusd low)
 
-; Portfolio concentration rules
+; Medium-risk DeFi tokens
+(has-risk uniswap medium)
+(has-risk uni medium)
+(has-risk aave medium)
+(has-risk compound medium)
+(has-risk comp medium)
+(has-risk curve medium)
+(has-risk crv medium)
+
+; ============================================
+; HIGH-RISK ASSET PATTERNS
+; ============================================
+
+; Leveraged tokens (critical risk)
+(has-risk-pattern leverage critical)
+(has-risk-pattern 3x critical)
+(has-risk-pattern 5x critical)
+(has-risk-pattern 10x critical)
+(has-risk-pattern 2x high)
+
+; Directional tokens (high risk)
+(has-risk-pattern short high)
+(has-risk-pattern bear high)
+(has-risk-pattern bull high)
+(has-risk-pattern long high)
+
+; Meme/speculative tokens (critical risk)
+(has-risk-pattern safemoon critical)
+(has-risk-pattern baby critical)
+(has-risk-pattern elon critical)
+(has-risk-pattern moon high)
+(has-risk-pattern doge high)
+(has-risk-pattern shib high)
+(has-risk-pattern inu high)
+
+; New/unverified tokens
+(has-risk-pattern new critical)
+(has-risk-pattern launch critical)
+(has-risk-pattern presale critical)
+
+; ============================================
+; CONCENTRATION RISK RULES
+; ============================================
+
+; Critical: Over 70% in single asset
+(concentration-threshold critical 0.70)
 (concentration-rule
-    (if (> single-asset-percentage 50)
-        (risk-level high)
-        (reason "Over-concentrated in single asset")))
+    (if (> single-asset-percentage 0.70)
+        (alert "Extreme concentration - critical risk")
+        (action "Diversify immediately")))
 
+; High: Over 50% in single asset  
+(concentration-threshold high 0.50)
 (concentration-rule
-    (if (> single-asset-percentage 70)
-        (risk-level critical)
-        (reason "Extreme concentration - diversification needed")))
+    (if (> single-asset-percentage 0.50)
+        (alert "High concentration risk")
+        (action "Reduce top holding to under 50%")))
 
-; Volatility patterns
-(volatility-pattern
-    (if (> price-change-24h 20)
-        (alert "High volatility detected")
-        (action "Consider stop-loss")))
+; Medium: Over 30% in single asset
+(concentration-threshold medium 0.30)
+(concentration-rule
+    (if (> single-asset-percentage 0.30)
+        (alert "Moderate concentration")
+        (action "Consider diversification")))
 
-(volatility-pattern
+; ============================================
+; VOLATILITY RISK RULES
+; ============================================
+
+; Extreme volatility (>50% change in 24h)
+(volatility-threshold extreme 50)
+(volatility-rule
     (if (> price-change-24h 50)
-        (alert "Extreme volatility")
-        (action "Immediate review recommended")))
+        (alert "Extreme volatility detected")
+        (action "Consider stop-loss orders")))
 
-; Liquidity risks
-(liquidity-risk
+; High volatility (>20% change in 24h)
+(volatility-threshold high 20)
+(volatility-rule
+    (if (> price-change-24h 20)
+        (alert "High volatility")
+        (action "Monitor closely - set alerts")))
+
+; Medium volatility (>10% change in 24h)
+(volatility-threshold medium 10)
+(volatility-rule
+    (if (> price-change-24h 10)
+        (alert "Elevated volatility")
+        (action "Normal for crypto - stay informed")))
+
+; ============================================
+; PORTFOLIO COMPOSITION RULES
+; ============================================
+
+; Stablecoin allocation recommendations
+(rule (stablecoin-ratio)
+    (if (< stablecoin-percentage 0.10)
+        (recommend "Increase stablecoin allocation to at least 10%")))
+
+(rule (high-risk-exposure)
+    (if (> high-risk-assets-percentage 0.30)
+        (alert "High exposure to risky assets")
+        (recommend "Reduce high-risk allocation below 30%")))
+
+; ============================================
+; RISK SCORING WEIGHTS
+; ============================================
+
+; Multi-factor risk calculation weights
+(weight concentration 0.3)
+(weight volatility 0.4)
+(weight asset-quality 0.3)
+
+; ============================================
+; MARKET CONDITION RULES
+; ============================================
+
+(market-condition
+    (if (and (< btc-dominance 0.40) (> market-cap 2000000000000))
+        (context "Altcoin season - higher risk/reward")
+        (recommendation "Diversification more important")))
+
+(market-condition
+    (if (and (> btc-dominance 0.60) (< market-cap 1000000000000))
+        (context "Bitcoin dominance - defensive posture")
+        (recommendation "Flight to quality - reduce altcoin exposure")))
+
+; ============================================
+; CORRELATION RISK
+; ============================================
+
+(correlation-rule
+    (if (> asset-correlation 0.80)
+        (alert "High correlation between assets")
+        (recommendation "Limited true diversification")))
+
+; ============================================
+; LIQUIDITY RISK
+; ============================================
+
+(liquidity-rule
     (if (< daily-volume 100000)
-        (risk-level high)
-        (reason "Low liquidity - exit difficulty")))
+        (alert "Low liquidity")
+        (risk-level high)))
 
-; Correlation risks
-(correlation-risk
-    (if (> asset-correlation 0.8)
-        (risk-level medium)
-        (reason "High correlation - limited diversification")))
+(liquidity-rule
+    (if (< daily-volume 10000)
+        (alert "Very low liquidity - exit difficulty")
+        (risk-level critical)))
 
-; Smart contract risks
-(contract-risk unaudited critical)
-(contract-risk audit-failed critical)
-(contract-risk audit-passed low)
-(contract-risk verified low)
+; ============================================
+; REBALANCING TRIGGERS
+; ============================================
 
-; Fraud patterns
-(fraud-indicator
-    (pattern honeypot)
-    (severity critical)
-    (action "Immediate exit recommended"))
-
-(fraud-indicator
-    (pattern rug-pull-signs)
-    (severity critical)
-    (action "High risk - avoid"))
-
-(fraud-indicator
-    (pattern wash-trading)
-    (severity high)
-    (action "Suspicious activity - investigate"))
-
-; Market condition rules
-(market-condition
-    (if (and (> btc-dominance 60) (< total-market-cap 1T))
-        (sentiment bearish)
-        (recommendation "Increase stablecoin allocation")))
-
-(market-condition
-    (if (and (< btc-dominance 40) (> total-market-cap 2T))
-        (sentiment bullish)
-        (recommendation "Altcoin season - diversify")))
-
-; Rebalancing rules
 (rebalancing-rule
-    (if (> portfolio-drift 15)
+    (if (> portfolio-drift 0.15)
         (action "Rebalance recommended")
         (priority medium)))
 
 (rebalancing-rule
-    (if (> portfolio-drift 25)
+    (if (> portfolio-drift 0.25)
         (action "Urgent rebalancing needed")
         (priority high)))
 
-; Risk scoring functions
-(define (calculate-portfolio-risk assets)
-    (let ((concentration (concentration-score assets))
-          (volatility (volatility-score assets))
-          (liquidity (liquidity-score assets)))
-        (weighted-average concentration 0.3
-                         volatility 0.4
-                         liquidity 0.3)))
+; ============================================
+; FRAUD/SCAM INDICATORS
+; ============================================
 
-; Alert prioritization
-(alert-priority critical immediate)
-(alert-priority high within-hour)
-(alert-priority medium within-day)
-(alert-priority low review-weekly)
+(fraud-indicator honeypot critical)
+(fraud-indicator unverified-contract critical)
+(fraud-indicator no-liquidity-lock critical)
+(fraud-indicator ownership-not-renounced high)
+(fraud-indicator high-tax high)
 
-; Historical pattern matching
-(pattern-match crash-warning
-    (conditions
-        (sudden-volume-spike 10x)
-        (price-drop 15)
-        (within-hours 1))
-    (probability 0.8)
-    (action "Risk of further decline"))
+; ============================================
+; KNOWLEDGE GRAPH METADATA
+; ============================================
 
-(pattern-match recovery-signal
-    (conditions
-        (volume-increase gradual)
-        (price-stabilization 3-days)
-        (support-level-hold))
-    (probability 0.7)
-    (action "Potential recovery"))
+; Version and attribution
+(metadata version "1.0")
+(metadata author "DeFiGuard")
+(metadata powered-by "SingularityNET MeTTa")
+(metadata last-updated "2025-10-12")
 
-; Cross-chain risk
-(cross-chain-risk
-    (if (assets-on-multiple-chains)
-        (consideration "Bridge risk")
-        (mitigation "Monitor bridge security")))
+; Knowledge graph statistics
+(metadata total-assets 50)
+(metadata total-rules 25)
+(metadata risk-factors 10)
 
-; Stablecoin depeg detection
-(depeg-warning
-    (if (< stablecoin-price 0.98)
-        (alert "Depeg risk")
-        (action "Consider alternative stablecoins")))
-
-(depeg-critical
-    (if (< stablecoin-price 0.95)
-        (alert "Critical depeg")
-        (action "Immediate exit recommended")))
+; End of DeFiGuard Risk Knowledge Graph

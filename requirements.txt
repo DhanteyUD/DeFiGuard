@@ -5,7 +5,7 @@ uagents-ai-engine==0.4.0
 # MeTTa/Hyperon
 hyperon>=0.2.8
 
-# ASI:One Agent
+# ASI:One Agent LLM (optional)
 openai==2.3.0
 
 # Web3 & Blockchain

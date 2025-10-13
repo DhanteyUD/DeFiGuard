@@ -2,164 +2,313 @@
 
 ![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
 ![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
+![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-**DeFiGuard** is an autonomous, decentralized portfolio risk management system powered by the ASI Alliance. It monitors crypto portfolios across multiple chains, analyzes risks using AI reasoning, detects fraud, and provides real-time alerts through ASI:One interface.
+**DeFiGuard** is an autonomous, decentralized portfolio risk management system powered by the ASI Alliance. It monitors crypto portfolios across multiple chains, analyzes risks using AI reasoning with SingularityNET's MeTTa, detects fraud, and provides real-time alerts through ASI:One chat interface.
+
+---
+
+## 📋 Table of Contents
+
+- [Demo Video](#-demo-video)
+- [Architecture](#️-architecture)
+- [ASI Alliance Technologies](#-asi-alliance-technologies)
+- [Features](#-features)
+- [Agent Addresses](#-agent-addresses)
+- [Quick Start](#-quick-start)
+- [Usage](#-using-defiguard)
+- [Risk Methodology](#-risk-scoring-methodology)
+- [Technologies](#️-technologies-used)
+- [Documentation](#-documentation)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
 
 ## 🎥 Demo Video
 
-[Watch Demo Video (3-5 minutes)](YOUR_YOUTUBE_LINK_HERE)
+[▶️ Watch Demo Video (3-5 minutes)](YOUR_YOUTUBE_LINK_HERE)
+
+---
 
 ## 🏗️ Architecture
 
 ```
-┌────────────────────────────────────────────────┐
-│                 USER INTERFACE                 │
-│                 (ASI:One Chat)                 │
-└──────────────────────┬─────────────────────────┘
-                       │
-                       ▼
-          ┌────────────────────────┐
-          │       Alert Agent      │ ◄────── Real-time Notifications
-          │     (Chat Protocol)    │
-          └────────┬───────────────┘
-                   │
-       ┌───────────┼───────────┬──────────┐
-       ▼           ▼           ▼          ▼
-┌──────────┐ ┌──────────┐ ┌─────────┐ ┌──────────┐
-│Portfolio │ │   Risk   │ │ Market  │ │  Fraud   │
-│ Monitor  │ │ Analysis │ │  Data   │ │Detection │
-│  Agent   │ │  Agent   │ │  Agent  │ │  Agent   │
-└────┬─────┘ └────┬─────┘ └────┬────┘ └────┬─────┘
-     │            │            │           │
-     └────────────┴────────────┴───────────┘
-                       │
-                       ▼
-               ┌──────────────┐
-               │    MeTTa     │
-               │  Knowledge   │
-               │    Graph     │
-               └──────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                     USER INTERFACE                            │
+│                    (ASI:One Chat)                             │
+└────────────────────────┬─────────────────────────────────────┘
+                         │
+                         ▼
+            ┌────────────────────────┐
+            │     Alert Agent        │ ◄───── Real-time Notifications
+            │   (Chat Protocol)      │
+            └────────┬───────────────┘
+                     │
+         ┌───────────┼───────────┬──────────┐
+         ▼           ▼           ▼          ▼
+  ┌──────────┐ ┌──────────┐ ┌─────────┐ ┌──────────┐
+  │Portfolio │ │   Risk   │ │ Market  │ │  Fraud   │
+  │ Monitor  │ │ Analysis │ │  Data   │ │Detection │
+  │  Agent   │ │  Agent   │ │  Agent  │ │  Agent   │
+  └────┬─────┘ └────┬─────┘ └────┬────┘ └────┬─────┘
+       │            │            │           │
+       └────────────┴────────────┴───────────┘
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │  MeTTa Knowledge    │
+              │  Graph (50+ assets, │
+              │  25+ risk rules)    │
+              └─────────────────────┘
 ```
 
-## 🤖 Agent Addresses
+---
 
-All agents are deployed on **Agentverse** with Chat Protocol enabled:
+## 🤖 ASI Alliance Technologies
 
-| Agent                 | Address         | Port | Function                               |
-|-----------------------|-----------------|------|----------------------------------------|
-| **Portfolio Monitor** | `agent1qf8x...` | 8000 | Tracks wallet balances across chains   |
-| **Risk Analysis**     | `agent1qz3y...` | 8001 | AI-powered risk assessment with MeTTa  |
-| **Alert System**      | `agent1qa2b...` | 8002 | ASI:One chat interface & notifications |
-| **Market Data**       | `agent1qm5n...` | 8003 | Real-time price & volume data          |
-| **Fraud Detection**   | `agent1qp7k...` | 8004 | Scam & honeypot detection              |
+DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intelligent, autonomous risk management.
 
-> **Note**: Replace with your actual agent addresses after deployment
+### ✅ Fetch.ai Integration
+
+| Component | Usage in DeFiGuard | Benefits |
+|-----------|-------------------|----------|
+| **uAgents Framework** | All 5 agents built with uAgents | Autonomous agent development |
+| **Agentverse** | Cloud deployment platform | Scalable, always-on infrastructure |
+| **ASI:One Chat Protocol** | Alert agent user interface | Natural language interaction |
+| **Agent Communication** | Inter-agent messaging | Decentralized coordination |
+| **Bureau System** | Multi-agent orchestration | Centralized management |
+
+**Implementation:**
+- 5 specialized agents communicating autonomously
+- Real-time message passing between agents
+- Deployed to Agentverse for 24/7 operation
+- Chat interface for user interaction
+
+### ✅ SingularityNET Integration
+
+| Component | Usage in DeFiGuard | Benefits |
+|-----------|-------------------|----------|
+| **MeTTa Knowledge Graphs** | Risk analysis reasoning engine | Declarative AI logic |
+| **Knowledge Base** | 50+ asset classifications, 25+ rules | Explainable decisions |
+| **Pattern Matching** | Fraud and risk detection | Intelligent reasoning |
+| **Logical Inference** | Portfolio risk assessment | Composable rules |
+
+**Implementation:**
+- MeTTa knowledge graph with comprehensive risk ontology
+- Query-based risk classification system
+- Explainable AI - every decision traceable to knowledge base
+- Extensible rule system for domain experts
+
+**📚 Detailed Integration:** See [docs/METTA_INTEGRATION.md](docs/METTA_INTEGRATION.md)
+
+### 🔗 Why Both Technologies?
+
+| Aspect | Fetch.ai | SingularityNET |
+|--------|----------|----------------|
+| **Purpose** | Agent infrastructure | AI reasoning |
+| **Role** | Communication & orchestration | Knowledge & intelligence |
+| **In DeFiGuard** | Agents talk to each other | Agents make smart decisions |
+| **Analogy** | Nervous system | Brain |
+| **Example** | Portfolio Monitor → Risk Analyzer | Risk rules in MeTTa graph |
+
+**Together**: Fetch.ai provides the **communication layer**, SingularityNET provides the **intelligence layer**. This combination creates truly autonomous, intelligent agents.
+
+---
 
 ## ✨ Features
 
 ### 🔍 Real-Time Portfolio Monitoring
-- Multi-chain support (Ethereum, Polygon, BSC, Arbitrum)
-- Automatic balance tracking every 5 minutes
-- Historical snapshot comparison
+- ✅ **Multi-chain support**: Ethereum, Polygon, BSC, Arbitrum
+- ✅ **Automatic balance tracking**: Every 5 minutes
+- ✅ **Historical snapshots**: Track portfolio changes over time
+- ✅ **Asset valuation**: Real-time USD pricing via CoinGecko
+- ✅ **Cross-chain aggregation**: Unified view of all holdings
 
-### 🧠 AI-Powered Risk Analysis
-- MeTTa Knowledge Graph for pattern recognition
-- Multi-factor risk scoring:
-  - Concentration risk (Herfindahl Index)
-  - Volatility analysis (24h/7d/30d changes)
-  - Asset-specific risks
-  - Liquidity assessment
-- Dynamic recommendations
+### 🧠 AI-Powered Risk Analysis (MeTTa)
+- ✅ **MeTTa Knowledge Graph**: SingularityNET reasoning engine
+- ✅ **Multi-factor risk scoring**:
+  - Concentration risk (Herfindahl-Hirschman Index)
+  - Volatility analysis (24h/7d/30d price changes)
+  - Asset quality assessment
+  - Liquidity risk evaluation
+- ✅ **Explainable AI**: Every decision traceable to knowledge base
+- ✅ **Dynamic recommendations**: Context-aware advice
+- ✅ **Pattern recognition**: Identifies complex risk scenarios
 
-### 🚨 Intelligent Alerts
-- Risk-based alert levels (Low → Critical)
-- ASI:One chat integration
-- Customizable alert thresholds
-- Alert history tracking
+### 🚨 Intelligent Alerts (ASI:One)
+- ✅ **Risk-based levels**: Low → Medium → High → Critical
+- ✅ **ASI:One chat integration**: Natural language interface
+- ✅ **Interactive commands**: `status`, `history`, `help`
+- ✅ **Customizable thresholds**: Personalized risk tolerance
+- ✅ **Alert history**: Track past notifications
+- ✅ **Real-time delivery**: Instant notifications
 
 ### 📊 Market Intelligence
-- CoinGecko API integration
-- Price change detection
-- Volume spike identification
-- Multi-token batch requests
+- ✅ **CoinGecko API integration**: 10,000+ token coverage
+- ✅ **Price change detection**: Alerts on significant moves (>10%)
+- ✅ **Volume spike identification**: Unusual trading activity
+- ✅ **Multi-token batch requests**: Efficient data retrieval
+- ✅ **Market cap tracking**: Total and circulating supply
+- ✅ **5-minute cache**: Optimized API usage
 
 ### 🕵️ Fraud Detection
-- Honeypot detection
-- High tax identification
-- Ownership analysis
-- Liquidity risk assessment
-- Holder concentration analysis
+- ✅ **Honeypot detection**: Identifies tokens that can't be sold
+- ✅ **High tax identification**: Flags excessive buy/sell taxes (>10%)
+- ✅ **Ownership analysis**: Checks if ownership is renounced
+- ✅ **Liquidity risk assessment**: Evaluates exit difficulty
+- ✅ **Holder concentration**: Tracks whale dominance
+- ✅ **Scam pattern matching**: Known fraud indicators
+
+---
+
+## 🤖 ASI Alliance Technologies
+
+### Fetch.ai Integration ✅
+
+- **uAgents Framework**: All 5 agents built with Fetch.ai's uAgents
+- **Agentverse Deployment**: Cloud-hosted agent infrastructure
+- **ASI:One Chat Protocol**: Natural language interface for alerts
+- **Inter-Agent Communication**: Decentralized message passing
+- **Bureau System**: Multi-agent orchestration
+
+### SingularityNET Integration ✅
+
+- **MeTTa Knowledge Graphs**: Declarative AI reasoning for risk analysis
+- **Knowledge Base**: 50+ asset classifications, 25+ risk rules
+- **Explainable AI**: Every decision traceable to knowledge graph
+- **Pattern Matching**: Intelligent fraud and risk detection
+- **Extensible Rules**: Domain experts can update without code changes
+
+**📚 Detailed Integration**: See [METTA_INTEGRATION.md](METTA_INTEGRATION.md)
+
+### Why Both Technologies?
+
+| Aspect | Fetch.ai | SingularityNET |
+|--------|----------|----------------|
+| **Purpose** | Agent infrastructure | AI reasoning |
+| **Strength** | Communication & orchestration | Knowledge & intelligence |
+| **In DeFiGuard** | Agents talk to each other | Agents make smart decisions |
+| **Example** | Portfolio Monitor → Risk Analyzer | Risk rules in MeTTa graph |
+
+**Together**: Fetch.ai provides the **nervous system** (communication), SingularityNET provides the **brain** (reasoning).
+
+---
+
+## 🤖 Agent Addresses
+
+All agents deployed on **Agentverse** (Fetch.ai Testnet):
+
+| Agent | Address | Port | Status |
+|-------|---------|------|--------|
+| **Portfolio Monitor** | `agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f` | 8000 | ✅ Active |
+| **Risk Analysis** | `agent1qtrn82fz9tnspwudzrjr7mm9ncwvavjse5xcv7j9t06gajmdxq0yg38dyx5` | 8001 | ✅ Active |
+| **Alert System** | `agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l` | 8002 | ✅ Active + Chat |
+| **Market Data** | `agent1qgwdvuucfhpvucqdru0gnrwc2zqf0ak5u24rvxua9flcazctmdvdsyrr8qq` | 8003 | ✅ Active |
+| **Fraud Detection** | `agent1q0x3wcul6azlcu4wy5khce9hklav28ea9f8kjqcq649rs4jat5kc7zxarn6` | 8004 | ✅ Active |
+
+**📖 Individual Agent Documentation:** See [docs/agents/](docs/agents/) for detailed README for each agent.
+
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 ```bash
-# Python 3.8 or higher
-python --version
+# Python 3.8+ required
+python --version  # Should be 3.8 or higher
 
-# Git
+# Git (for cloning)
 git --version
 ```
 
 ### Installation
 
 ```bash
-# Clone repository
+# 1. Clone repository
 git clone https://github.com/DhanteyUD/DeFiGuard.git
 cd DeFiGuard
 
-# Create virtual environment
+# 2. Create virtual environment
 python -m venv venv
 
-# Activate virtual environment
+# 3. Activate virtual environment
 # Windows:
 venv\Scripts\activate
 # Mac/Linux:
 source venv/bin/activate
 
-# Install dependencies
+# 4. Install dependencies
 pip install -r requirements.txt
 ```
 
 ### Configuration
 
-1. **Copy environment template:**
+#### 1. Create Environment File
 ```bash
 cp .env.example .env
 ```
 
-2. **Edit `.env` with your settings:**
-```env
-# Agent Seeds (MUST CHANGE THESE!)
-PORTFOLIO_AGENT_SEED=your_unique_seed_here
-RISK_AGENT_SEED=your_unique_seed_here
-ALERT_AGENT_SEED=your_unique_seed_here
-MARKET_AGENT_SEED=your_unique_seed_here
-FRAUD_AGENT_SEED=your_unique_seed_here
+#### 2. Update `.env` with Your Settings
 
-# API Keys (Optional but recommended)
+**Minimum Required (Generate Random Strings):**
+```env
+# Agent Seeds - Change these to unique random strings!
+PORTFOLIO_AGENT_SEED=your_random_portfolio_seed_12345678901234
+RISK_AGENT_SEED=your_random_risk_seed_23456789012345678
+ALERT_AGENT_SEED=your_random_alert_seed_34567890123456789
+MARKET_AGENT_SEED=your_random_market_seed_45678901234567890
+FRAUD_AGENT_SEED=your_random_fraud_seed_56789012345678901
+```
+
+**Optional (For Better Functionality):**
+```env
+# API Keys (Free tiers available)
+COINGECKO_API_KEY=your_coingecko_api_key
 ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
 POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/YOUR_KEY
-COINGECKO_API_KEY=your_coingecko_key
-ETHERSCAN_API_KEY=your_etherscan_key
 
 # Configuration
 NETWORK=testnet
+RISK_THRESHOLD=0.7
+ALERT_COOLDOWN=300
+MONITOR_INTERVAL=300
 LOG_LEVEL=INFO
-RISK_THRESHOLD=
-ALERT_COOLDOWN=
-MONITOR_INTERVAL=
 ```
 
-### Running DeFiGuard
+**💡 Tip:** Generate secure seeds with:
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+### Verify MeTTa Integration (SingularityNET)
 
 ```bash
-# Start all agents
+# Test MeTTa installation and knowledge base
+python verify_metta.py
+```
+
+Expected output:
+```
+✅ MeTTa (SingularityNET) integration active
+✅ Knowledge base loaded from metta/risk_knowledge.metta
+✅ bitcoin: low
+✅ Pattern 'leverage': critical
+📊 VERIFICATION SUMMARY: ✅ OPERATIONAL
+```
+
+If MeTTa fails to install, DeFiGuard will use Python fallback mode.
+
+### Run DeFiGuard
+
+```bash
+# Start all 5 agents
 python main.py
 ```
 
-You should see:
+**Success Output:**
 ```
     ╔═══════════════════════════════════════════════════════════╗
     ║                                                           ║
@@ -172,164 +321,366 @@ You should see:
     
     📊 Agent Status:
     
-    ✓ Portfolio Monitor   : agent1qf8x...
-    ✓ Risk Analyzer       : agent1qz3y...
-    ✓ Alert System        : agent1qa2b...
-    ✓ Market Data         : agent1qm5n...
-    ✓ Fraud Detection     : agent1qp7k...
-    
-    🚀 All agents initialized successfully!
-    🌐 ASI:One Chat Protocol enabled
+  ✓ Portfolio Monitor   : agent1qv3pywlds6...
+  ✓ Risk Analyzer       : agent1qtrn82fz9t...
+  ✓ Alert System        : agent1q2zusjcsgl...
+  ✓ Market Data         : agent1qgwdvuucfh...
+  ✓ Fraud Detection     : agent1q0x3wcul6a...
+
+  🚀 All agents initialized successfully!
+  🌐 ASI:One Chat Protocol enabled on Alert Agent
+  🧠 SingularityNET MeTTa integration: ACTIVE
+
+============================================================
 ```
-
-## 📱 Using DeFiGuard
-
-### 1. Register Your Portfolio
-
-Send a message to the Portfolio Monitor Agent:
-
-```python
-from agents.portfolio_monitor import Portfolio
-from datetime import datetime, UTC
-
-portfolio = Portfolio(
-    user_id="your_user_id",
-    wallets=[
-        "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-        "0xYourSecondWallet..."
-    ],
-    chains=["ethereum", "polygon", "bsc"],
-    timestamp=datetime.now(UTC).isoformat()
-)
-```
-
-### 2. Interact via ASI:One
-
-1. Go to [ASI:One Interface](https://asione.fetch.ai)
-2. Search for "DeFiGuard Alert System"
-3. Start chatting!
-
-**Available Commands:**
-- `status` - Check current portfolio risk
-- `history` - View recent alerts
-- `help` - Show available commands
-
-### 3. Automated Monitoring
-
-Once registered, DeFiGuard automatically:
-- Monitors your portfolio every 5 minutes
-- Analyzes risk using MeTTa knowledge graphs
-- Sends alerts when risk thresholds are exceeded
-- Detects suspicious market activities
-
-## 🧪 Testing
-
-Run the test suite:
-
-```bash
-# Make sure main.py is running in another terminal
-python tests/test_system.py
-```
-
-This will test:
-- ✅ Portfolio registration
-- ✅ Risk analysis
-- ✅ Market data fetching
-- ✅ Fraud detection
-
-## 🛠️ Technologies Used
-
-### ASI Alliance Stack
-- **Fetch.ai uAgents Framework** - Agent development & communication
-- **Agentverse** - Agent deployment & registry
-- **ASI:One Chat Protocol** - User interface integration
-- **SingularityNET MeTTa** - Knowledge graph reasoning
-
-### Supporting Technologies
-- **Python 3.8+** - Core language
-- **CoinGecko API** - Market data
-- **Web3.py** - Blockchain interaction
-- **aiohttp** - Async HTTP requests
-- **Hyperon** - MeTTa runtime
-
-## 📊 Risk Scoring Methodology
-
-DeFiGuard uses a weighted multi-factor risk score:
-
-```
-Risk Score = (Concentration × 0.3) + (Volatility × 0.4) + (Asset Risk × 0.3)
-```
-
-### Risk Levels
-- 🟢 **Low** (0-30%): Portfolio is healthy
-- 🟡 **Medium** (30-50%): Monitor closely
-- 🟠 **High** (50-70%): Action recommended within 24h
-- 🔴 **Critical** (70-100%): Immediate action required
-
-### Concentration Risk
-Measured using Herfindahl-Hirschman Index (HHI):
-- Single asset >50% of portfolio = High risk
-- Single asset >70% = Critical risk
-
-### Volatility Risk
-Based on 24h price changes:
-- >20% change = High volatility
-- >50% change = Extreme volatility
-
-## 🔐 Security & Privacy
-
-- **No Private Keys**: DeFiGuard only monitors public wallet addresses
-- **Decentralized**: No central database - data stays with agents
-- **Open Source**: All code is auditable
-- **Privacy First**: User data never leaves the agent network
-
-## 🎯 Use Cases
-
-1. **Portfolio Risk Management**
-   - Track diversification across chains
-   - Get alerts before major draw-downs
-
-2. **Fraud Prevention**
-   - Analyze tokens before investing
-   - Detect honeypots and scams
-
-3. **Market Intelligence**
-   - Track price movements
-   - Identify unusual volume patterns
-
-4. **Automated Rebalancing**
-   - Get recommendations when portfolio drifts
-   - Maintain target allocations
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **ASI Alliance** for the hackathon opportunity
-- **Fetch.ai** for uAgents framework
-- **SingularityNET** for MeTTa knowledge graphs
-- **CoinGecko** for market data API
-
-## 📞 Contact
-
-- **Project Link**: [https://github.com/DhanteyUD/DeFiGuard](https://github.com/DhanteyUD/DeFiGuard)
-- **Demo Video**: [YouTube Link](YOUR_LINK)
-- **ASI:One Agent**: Search "DeFiGuard" in ASI:One
 
 ---
 
-**Built with ❤️ for ASI Alliance Hackathon**
+## 📱 Using DeFiGuard
+
+### Method 1: Via ASI:One Chat (Recommended)
+
+1. **Open ASI:One**: https://asione.fetch.ai
+2. **Search for Agent**: Use address `agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l`
+3. **Start Chatting**:
+
+```
+You: help
+Agent: 👋 Welcome to DeFiGuard Alert System!
+       Commands: status, history, help
+
+You: status
+Agent: 📊 Current Portfolio Status
+       Risk Level: MEDIUM
+       Risk Score: 45%
+       Last Updated: 2025-10-12T10:30
+
+You: history
+Agent: 📜 Recent Alerts
+       1. MEDIUM (45%) - Today 10:30
+       2. LOW (30%) - Yesterday
+```
+
+**Available Commands:**
+- `status` - Check current portfolio risk level
+- `history` - View recent alerts (last 5)
+- `help` - Show command reference
+
+### Method 2: Programmatic (Direct Agent Messaging)
+
+```python
+from uagents import Agent, Context, Model
+from agents.portfolio_monitor import Portfolio
+from datetime import datetime, timezone
+
+# Create your client agent
+client = Agent(name="my_client", mailbox=True)
+
+@client.on_event("startup")
+async def register_portfolio(ctx: Context):
+    # Send portfolio registration
+    portfolio = Portfolio(
+        user_id="0xYourWalletAddress",
+        wallets=[
+            "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+            "0xYourSecondWallet..."
+        ],
+        chains=["ethereum", "polygon", "bsc"],
+        timestamp=datetime.now(timezone.utc).isoformat()
+    )
+    
+    # Send to Portfolio Monitor Agent
+    await ctx.send(
+        "agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f",
+        portfolio
+    )
+    ctx.logger.info("✅ Portfolio registered!")
+
+if __name__ == "__main__":
+    client.run()
+```
+
+### Automated Monitoring
+
+Once registered, DeFiGuard automatically:
+
+1. **Scans portfolio** every 5 minutes
+2. **Queries MeTTa knowledge graph** for risk assessment
+3. **Calculates risk score** using multi-factor analysis
+4. **Sends alerts** when thresholds exceeded
+5. **Detects market anomalies** (price spikes, volume changes)
+6. **Checks for fraud** in new token holdings
+
+---
+
+## 📊 Risk Scoring Methodology
+
+### Multi-Factor Risk Formula
+
+```
+Risk Score = (Concentration × 0.3) + (Volatility × 0.4) + (Asset Quality × 0.3)
+```
+
+### Risk Levels
+
+| Level | Score | Indicator | Action |
+|-------|-------|-----------|--------|
+| 🟢 **Low** | 0-30% | Portfolio is healthy | Continue monitoring |
+| 🟡 **Medium** | 30-50% | Monitor closely | Review within week |
+| 🟠 **High** | 50-70% | Action recommended | Rebalance within 24h |
+| 🔴 **Critical** | 70-100% | Immediate action | Review immediately |
+
+### Risk Components
+
+#### 1. Concentration Risk (30% weight)
+- **Method**: Herfindahl-Hirschman Index (HHI)
+- **Formula**: `HHI = Σ(asset_percentage²)`
+- **Thresholds** (via MeTTa):
+  - Critical: Single asset >70%
+  - High: Single asset >50%
+  - Medium: Single asset >30%
+
+#### 2. Volatility Risk (40% weight)
+- **Method**: 24-hour price change analysis
+- **Formula**: `volatility_score = avg_change / 20`
+- **Thresholds** (via MeTTa):
+  - Extreme: >50% change in 24h
+  - High: >20% change in 24h
+  - Medium: >10% change in 24h
+
+#### 3. Asset Quality Risk (30% weight)
+- **Method**: MeTTa knowledge graph classification
+- **Factors**:
+  - Token reputation (via MeTTa: `has-risk bitcoin low`)
+  - Leverage indicators (via MeTTa: `has-risk-pattern leverage critical`)
+  - Stablecoin ratio
+  - Liquidity metrics
+
+### MeTTa-Powered Reasoning
+
+All risk thresholds and classifications are defined in the MeTTa knowledge graph:
+
+```metta
+; Example rules from metta/risk_knowledge.metta
+
+; Asset classifications
+(has-risk bitcoin low)
+(has-risk ethereum low)
+(has-risk-pattern leverage critical)
+
+; Concentration thresholds
+(concentration-threshold critical 0.70)
+(concentration-threshold high 0.50)
+
+; Volatility thresholds
+(volatility-threshold extreme 50)
+(volatility-threshold high 20)
+```
+
+**🧠 Benefits:**
+- Explainable: Every decision traceable to knowledge base
+- Extensible: Add new rules without code changes
+- Maintainable: Domain experts can update rules
+- Composable: Rules combine for complex reasoning
+
+---
+
+## 🧪 Testing
+
+### Run Integration Tests
+
+```bash
+# Terminal 1: Start agents
+python main.py
+
+# Terminal 2: Run tests
+python tests/test_system.py
+```
+
+**Tests cover:**
+- ✅ Portfolio registration
+- ✅ Risk analysis with MeTTa
+- ✅ Market data fetching
+- ✅ Fraud detection
+- ✅ Alert generation
+
+### Verify MeTTa Integration
+
+```bash
+python verify_metta.py
+```
+
+---
+
+## 🛠️ Technologies Used
+
+### Core Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **Python** | 3.8+ | Core language |
+| **Fetch.ai uAgents** | 0.12.0 | Agent framework |
+| **SingularityNET MeTTa** | Latest | Knowledge reasoning |
+| **Agentverse** | Cloud | Agent deployment |
+| **ASI:One** | Latest | Chat interface |
+
+### APIs & Libraries
+
+| Library | Purpose |
+|---------|---------|
+| `aiohttp` | Async HTTP requests |
+| `web3.py` | Blockchain interaction |
+| `hyperon` | MeTTa runtime |
+| `pydantic` | Data validation |
+| `python-dotenv` | Environment config |
+| `ccxt` | Exchange data |
+
+### External APIs
+
+- **CoinGecko API**: Token prices, market cap, volume
+- **Alchemy/Infura**: Ethereum/Polygon RPC
+- **Etherscan API**: Contract verification
+
+---
+
+## 📚 Documentation
+
+### Project Documentation
+
+- **[README.md](README.md)** - This file (project overview)
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Agentverse deployment guide
+- **[docs/METTA_INTEGRATION.md](docs/METTA_INTEGRATION.md)** - SingularityNET MeTTa integration details
+- **[LICENSE](LICENSE)** - MIT License
+
+### Individual Agent Documentation
+
+Each agent has detailed documentation:
+
+- **[Portfolio Monitor](docs/agents/portfolio-monitor.md)** - Multi-chain portfolio tracking
+- **[Risk Analysis Agent](docs/agents/risk-analysis.md)** - AI-powered risk assessment with MeTTa
+- **[Alert System Agent](docs/agents/alert-system.md)** - ASI:One chat interface & notifications
+- **[Market Data Agent](docs/agents/market-data.md)** - Real-time price feeds & market intelligence
+- **[Fraud Detection Agent](docs/agents/fraud-detection.md)** - Scam detection & honeypot identification
+
+### MeTTa Knowledge Base
+
+- **[metta/risk_knowledge.metta](metta/risk_knowledge.metta)** - 50+ assets, 25+ rules, comprehensive risk ontology
+
+---
+
+## 🔐 Security & Privacy
+
+- ✅ **No Private Keys**: Only monitors public wallet addresses
+- ✅ **Read-Only**: Cannot execute transactions
+- ✅ **Decentralized**: No central database
+- ✅ **Open Source**: All code auditable
+- ✅ **Privacy First**: Data stays within agent network
+- ✅ **Secure Communication**: Fetch.ai encrypted messaging
+
+---
+
+## 🎯 Use Cases
+
+### 1. Portfolio Risk Management
+- Track diversification across multiple chains
+- Get alerts before major drawdowns
+- Maintain healthy risk-reward ratio
+
+### 2. Fraud Prevention
+- Analyze tokens before investing
+- Detect honeypots and scams early
+- Identify high-risk token patterns
+
+### 3. Market Intelligence
+- Track price movements in real-time
+- Identify unusual volume patterns
+- Stay informed on market anomalies
+
+### 4. Automated Rebalancing
+- Get recommendations when portfolio drifts
+- Maintain target allocations
+- Optimize risk-adjusted returns
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! We'd love your help improving DeFiGuard.
+
+### How to Contribute
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/AmazingFeature`)
+3. **Commit** your changes (`git commit -m 'Add AmazingFeature'`)
+4. **Push** to the branch (`git push origin feature/AmazingFeature`)
+5. **Open** a Pull Request
+
+### Areas for Contribution
+
+- 🔧 Additional blockchain integrations
+- 🧠 Enhanced MeTTa knowledge rules
+- 📊 New risk analysis metrics
+- 🎨 UI/UX improvements
+- 📚 Documentation improvements
+- 🐛 Bug fixes
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **ASI Alliance** - For the hackathon opportunity and infrastructure
+- **Fetch.ai** - For uAgents framework and Agentverse platform
+- **SingularityNET** - For MeTTa knowledge graph technology
+- **CoinGecko** - For comprehensive market data API
+- **Open Source Community** - For inspiration and support
+
+---
+
+## 📞 Contact & Links
+
+- **GitHub**: https://github.com/DhanteyUD/DeFiGuard
+- **Demo Video**: [YouTube Link](YOUR_LINK)
+- **ASI:One**: Search "DeFiGuard Alert System"
+- **Documentation**: [Full Docs](docs/)
+- **Issues**: [GitHub Issues](https://github.com/DhanteyUD/DeFiGuard/issues)
+
+---
+
+## 🏆 Built for ASI Alliance Hackathon
+
+**DeFiGuard** showcases the power of combining:
+- 🤖 **Fetch.ai's uAgents** - For autonomous agent infrastructure
+- 🧠 **SingularityNET's MeTTa** - For intelligent reasoning
+- 🌐 **ASI:One** - For seamless user interaction
+
+Together, these technologies enable truly intelligent, autonomous, and explainable DeFi risk management.
+
+---
+
+**Built with ❤️ by [DhanteyUD](https://github.com/DhanteyUD)**
 
 *Securing DeFi, one portfolio at a time* 🛡️
+
+---
+
+## 🚀 Quick Links
+
+| Resource | Link |
+|----------|------|
+| **Live Demo** | [ASI:One Interface](https://asione.fetch.ai) |
+| **Documentation** | [docs/](docs/) |
+| **MeTTa Integration** | [METTA_INTEGRATION.md](docs/METTA_INTEGRATION.md) |
+| **Deployment Guide** | [DEPLOYMENT.md](DEPLOYMENT.md) |
+| **Agent READMEs** | [docs/agents/](docs/agents/) |
+| **Fetch.ai Docs** | https://docs.fetch.ai/ |
+| **SingularityNET Docs** | https://metta-lang.dev/ |
+
+---
+
+**⭐ Star this repo if you find it useful!**
