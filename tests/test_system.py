@@ -9,17 +9,22 @@ from pathlib import Path
 # Add parent directory to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from uagents import Agent, Context
+from uagents import Agent, Model, Context
 from agents.portfolio_monitor import Portfolio
 from agents.risk_analysis import RiskAnalysisRequest
 from agents.fraud_detection import TokenAnalysisRequest
 from agents.market_data import MarketDataRequest
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import asyncio
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+class GenericMessage(Model):
+    content: dict
+
 
 # Test agent
 test_agent = Agent(
@@ -37,6 +42,7 @@ RISK_AGENT = os.getenv("RISK_AGENT_ADDRESS", "")
 FRAUD_AGENT = os.getenv("FRAUD_AGENT_ADDRESS", "")
 MARKET_AGENT = os.getenv("MARKET_AGENT_ADDRESS", "")
 
+
 @test_agent.on_event("startup")
 async def run_tests(ctx: Context):
     """Run comprehensive system tests"""
@@ -53,7 +59,7 @@ async def run_tests(ctx: Context):
             user_id="test_user_001",
             wallets=["0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"],
             chains=["ethereum", "polygon"],
-            timestamp=datetime.now(UTC).isoformat()
+            timestamp=datetime.now(timezone.utc).isoformat()
         )
         await ctx.send(PORTFOLIO_AGENT, portfolio)
         ctx.logger.info("✓ Portfolio registration message sent")
@@ -86,7 +92,7 @@ async def run_tests(ctx: Context):
                     "chain": "ethereum"
                 }
             ],
-            timestamp=datetime.now(UTC).isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             risk_score=0.3
         )
         await ctx.send(RISK_AGENT, risk_request)
@@ -126,9 +132,10 @@ async def run_tests(ctx: Context):
     ctx.logger.info("All tests dispatched! Check agent logs for responses.")
     ctx.logger.info("=" * 60)
 
+
 # Message handlers for test responses
-@test_agent.on_message(model=None) # type: ignore
-async def handle_response(ctx: Context, sender: str, msg: any):
+@test_agent.on_message(model=GenericMessage)
+async def handle_response(ctx: Context, sender: str, msg: GenericMessage):
     """Handle responses from agents"""
     ctx.logger.info(f"\n📨 Response received from {sender[:16]}...")
     ctx.logger.info(f"Message type: {type(msg).__name__}")
@@ -139,6 +146,7 @@ async def handle_response(ctx: Context, sender: str, msg: any):
         for key, value in msg.__dict__.items():
             if not key.startswith('_'):
                 ctx.logger.info(f"  {key}: {value}")
+
 
 if __name__ == "__main__":
     print("🧪 Starting DeFiGuard System Tests...")
