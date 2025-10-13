@@ -10,7 +10,7 @@ from uagents_core.contrib.protocols.chat import (
 )
 from datetime import datetime, timezone
 from uuid import uuid4
-from pydantic import UUID4
+# from pydantic import UUID4
 from typing import List
 import os
 from dotenv import load_dotenv
@@ -100,7 +100,7 @@ def create_text_chat(text: str) -> ChatMessage:
     """Create a ChatMessage with text content"""
     return ChatMessage(
         timestamp=datetime.now(timezone.utc),
-        msg_id=UUID4(str(uuid4())),
+        msg_id=uuid4(), # type: ignore[arg-type] # UUID4(str(uuid4()))
         content=[TextContent(type="text", text=text)]
     )
 
