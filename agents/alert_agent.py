@@ -43,7 +43,7 @@ class ChatAckWrapper(Model):
 
 # Create Alert Agent
 alert_agent = Agent(
-    name="alert_system",
+    name="alert_agent",
     seed=os.getenv("ALERT_AGENT_SEED", "alert_demo_seed"),
     port=8002,
     endpoint=["http://localhost:8002/submit"],

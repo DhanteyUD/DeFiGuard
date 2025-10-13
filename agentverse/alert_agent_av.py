@@ -35,7 +35,7 @@ class ChatAckWrapper(Model):
 
 
 alert_agent = Agent(
-    name="alert_system",
+    name="alert_agent",
     mailbox=True,  # type: ignore[arg-type]
     publish_agent_details = True  # type: ignore[arg-type]
 )
