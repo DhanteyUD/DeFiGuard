@@ -46,7 +46,7 @@ portfolio_agent = Agent(
     seed=os.getenv("PORTFOLIO_AGENT_SEED", "portfolio_demo_seed"),
     port=8000,
     endpoint=["http://localhost:8000/submit"],
-    mailbox=False # type: ignore[arg-type]
+    mailbox=False  # type: ignore[arg-type]
 )
 
 # fund_agent_if_low(str(portfolio_agent.wallet.address()))
@@ -101,6 +101,12 @@ async def get_wallet_balance(wallet: str, chain: str) -> List[Dict]:
             "symbol": "USDC",
             "balance": 5000,
             "chain": chain
+        },
+        {
+            "token": "polygon",
+            "symbol": "MATIC",
+            "balance": 1500,
+            "chain": chain
         }
     ]
 
@@ -118,6 +124,28 @@ async def get_wallet_balance(wallet: str, chain: str) -> List[Dict]:
         })
 
     return enriched_balances
+
+
+def calculate_risk_score(assets: List[Dict]) -> float:
+    """Calculate basic risk score based on volatility and concentration"""
+    if not assets:
+        return 0.0
+
+    total_value = sum(a["value_usd"] for a in assets)
+    if total_value == 0:
+        return 0.0
+
+    # Concentration risk (Herfindahl index)
+    concentration = sum((a["value_usd"] / total_value) ** 2 for a in assets)
+
+    # Volatility risk (based on 24h change)
+    avg_volatility = sum(abs(a.get("change_24h", 0)) for a in assets) / len(assets)
+    volatility_score = min(avg_volatility / 20, 1)  # Normalize to 0-1
+
+    # Combined risk score
+    risk_score = (concentration * 0.4) + (volatility_score * 0.6)
+
+    return min(risk_score, 1.0)
 
 
 # Message Handlers
@@ -180,26 +208,6 @@ async def scan_portfolio(ctx: Context, user_id: str):
         await ctx.send(risk_agent_address, snapshot)
 
     return snapshot
-
-
-def calculate_risk_score(assets: List[Dict]) -> float:
-    """Calculate basic risk score based on volatility and concentration"""
-    if not assets:
-        return 0.0
-
-    total_value = sum(a["value_usd"] for a in assets)
-
-    # Concentration risk (Herfindahl index)
-    concentration = sum((a["value_usd"] / total_value) ** 2 for a in assets)
-
-    # Volatility risk (based on 24h change)
-    avg_volatility = sum(abs(a.get("change_24h", 0)) for a in assets) / len(assets)
-    volatility_score = min(avg_volatility / 20, 1)  # Normalize to 0-1
-
-    # Combined risk score
-    risk_score = (concentration * 0.4) + (volatility_score * 0.6)
-
-    return min(risk_score, 1.0)
 
 
 # Periodic monitoring

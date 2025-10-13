@@ -62,14 +62,13 @@ async def fetch_token_price(token_symbol: str) -> Dict:  # type: ignore[arg-type
                         "change_24h": token_data.get("usd_24h_change", 0)
                     }
     except Exception as e:
-        print(f"Error fetching price: {e}")
+        print(f"⚠️ Failed to fetch price for {token_symbol}: {e}")
         return {"price": 0, "change_24h": 0}
 
 
 async def get_wallet_balance(wallet: str, chain: str) -> List[Dict]:
-    """
-    Get real wallet balances using Web3
-    """
+    """Get real wallet balances using Web3"""
+
     chain_rpc = {
         "ethereum": "https://mainnet.infura.io/v3/YOUR_INFURA_KEY",
         "bsc": "https://bsc-dataseed.binance.org/",
@@ -219,13 +218,13 @@ async def scan_portfolio(ctx: Context, user_id: str):
 
     risk_score = calculate_risk_score(all_assets)
 
-    snapshot = {
-        "user_id": user_id,
-        "total_value_usd": total_value,
-        "assets": all_assets,
-        "timestamp": datetime.now(timezone.utc),
-        "risk_score": risk_score
-    }
+    snapshot = PortfolioSnapshot(
+        user_id=user_id,
+        total_value_usd=total_value,
+        assets=all_assets,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        risk_score=risk_score
+    )
 
     user_snapshots = ctx.storage.get(f"snapshots_{user_id}") or []
     user_snapshots.append(snapshot)
