@@ -165,7 +165,7 @@ def format_alert_message(alert: AlertNotification) -> str:
     message = f"{emoji} **DeFiGuard Alert** {emoji}\n\n"
     message += f"**Risk Level:** {alert.overall_risk.upper()}\n"
     message += f"**Risk Score:** {alert.risk_score:.2%}\n"
-    message += f"**Time:** {alert.timestamp}\n\n"
+    message += f"**Time:** {alert.timestamp[:16]}\n\n"
 
     if alert.concerns:
         message += "**⚠️ Concerns:**\n"
@@ -222,7 +222,7 @@ async def handle_alert(ctx: Context, sender: str, msg: AlertNotification):
         await ctx.send(user_address, ChatWrapper(message=chat_msg))
         ctx.logger.info(f"✅ Alert sent to user {msg.user_id}")
     else:
-        ctx.logger.info(f"ℹ️  No active session for {msg.user_id}")
+        ctx.logger.info(f"ℹ️  No active session for {msg.user_id} - alert stored for later")
 
     # Acknowledge receipt
     await ctx.send(sender, Acknowledgement(message=f"Alert processed for {msg.user_id}"))
@@ -259,11 +259,21 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     f"✅ Portfolio registered: {wallet_count} wallet(s) on {chain_count} chain(s)\n\n"
                     f"Your portfolio is being monitored 24/7.\n\n"
                     f"**Commands:**\n\n"
-                    f"`status` Check current portfolio risk\n\n"
-                    f"`history` View recent alerts (last 5)\n\n"
-                    f"`portfolio` View registered portfolio\n\n"
-                    f"`register <wallet> <chains>` Update portfolio\n\n"
-                    f"`help` Show this message"
+
+                    f"> To check current portfolio risk\n\n"
+                    f"`status` \n\n"
+
+                    f"> To view recent alerts (last 5)\n\n"
+                    f"`history` \n\n"
+
+                    f"> To view registered portfolio\n\n"
+                    f"`portfolio` \n\n"
+
+                    f"> To update portfolio\n\n"
+                    f"`register <wallet> <chains>` \n\n"
+
+                    f"> To show this message\n\n"
+                    f"`help`"
                 )
             else:
                 welcome_msg = (
@@ -274,8 +284,8 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     "**Example:**\n\n"
                     "`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon`\n\n"
                     "**Supported Chains:**\n\n"
-                    "ethereum, bsc, polygon, arbitrum, optimism, avalanche\n\n"
-                    "Type `help` for more commands."
+                    "ethereum, bsc, polygon\n\n"
+                    "Type **help** for more commands."
                 )
 
             response = create_text_chat(welcome_msg)
@@ -325,8 +335,8 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         f"**Wallet:** `{wallet}`\n\n"
                         f"**Chains:** {', '.join(chains)}\n\n"
                         f"Your portfolio is now being monitored 24/7.\n\n"
-                        f"You'll receive alerts when risks are detected.\n\n"
-                        f"Type `status` to check your current risk level."
+                        f"✓ No risks detected yet\n\n"
+                        f"Alerts will appear here automatically when risks are found."
                     )
                     await ctx.send(sender, create_text_chat(success_msg))
                     ctx.logger.info(f"✅ Portfolio registered for {sender}")
@@ -343,16 +353,16 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         f"**Wallets:**\n"
                     )
                     for i, wallet in enumerate(wallets, 1):
-                        portfolio_msg += f"{i}. `{wallet}`\n"
+                        portfolio_msg += f"{i}. `{wallet}`\n\n"
 
                     portfolio_msg += f"\n**Chains:**\n{', '.join(chains)}\n\n"
                     portfolio_msg += f"**Registered:** {registered_at[:16]}\n\n"
-                    portfolio_msg += f"To update, use:\n`register <new_wallet> <chains>`"
+                    portfolio_msg += f"To update, use:\n\n`register <new_wallet> <chains>`"
                 else:
                     portfolio_msg = (
                         "❌ No portfolio registered yet.\n\n"
-                        "Use: `register <wallet_address> <chains>`\n\n"
-                        "Example:\n`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon`"
+                        "Use: \n\n`register <wallet_address> <chains>`\n\n"
+                        "Example:\n\n`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon`"
                     )
 
                 await ctx.send(sender, create_text_chat(portfolio_msg))
@@ -401,19 +411,35 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             elif command == "help":
                 help_msg = (
                     "🆘 **DeFiGuard Help**\n\n"
+
                     "**Setup:**\n\n"
-                    "`register <wallet> <chains>` - Register portfolio\n\n"
+
+                    "Register portfolio"
+                    "`register <wallet> <chains>` \n\n"
+
                     "**Commands:**\n\n"
-                    "`status` Current portfolio risk level\n\n"
-                    "`history` View recent alerts (last 5)\n\n"
-                    "`portfolio` View registered portfolio\n\n"
-                    "`help` Show this message\n\n"
+
+                    "Current portfolio risk level"
+                    "`status` \n\n"
+
+                    "View recent alerts (last 5)"
+                    "`history` \n\n"
+
+                    "View registered portfolio"
+                    "`portfolio` \n\n"
+
+                    "Show this message"
+                    "`help` \n\n"
+
                     "**Risk Levels:**\n\n"
+
                     "🟢 **Low** - Portfolio is healthy\n\n"
                     "🟡 **Medium** - Monitor closely\n\n"
                     "🟠 **High** - Action recommended\n\n"
                     "🔴 **Critical** - Immediate action needed\n\n"
+
                     "**Supported Chains:**\n\n"
+
                     "ethereum, bsc, polygon, arbitrum, optimism, avalanche"
                 )
                 await ctx.send(sender, create_text_chat(help_msg))
@@ -448,6 +474,10 @@ async def startup(ctx: Context):
     ctx.logger.info("☁️  Running on Agentverse")
     ctx.logger.info("💬 ASI:One Chat Protocol enabled ✓")
     ctx.logger.info(f"🔗 Portfolio Agent: {PORTFOLIO_AGENT_ADDRESS}")
+    all_alerts = get_all_alerts(ctx)
+    sessions = get_active_sessions(ctx)
+    ctx.logger.info(f"📊 Stored alerts: {len(all_alerts)}")
+    ctx.logger.info(f"👥 Active sessions: {len(sessions)}")
     ctx.logger.info("=" * 60)
 
 
