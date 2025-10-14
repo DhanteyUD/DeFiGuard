@@ -100,7 +100,7 @@ def create_text_chat(text: str) -> ChatMessage:
     """Create a ChatMessage with text content"""
     return ChatMessage(
         timestamp=datetime.now(timezone.utc),
-        msg_id=uuid4(), # type: ignore[arg-type] # UUID4(str(uuid4()))
+        msg_id=uuid4(),  # type: ignore[arg-type] # UUID4(str(uuid4()))
         content=[TextContent(type="text", text=text)]
     )
 
@@ -163,13 +163,14 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
             # Send welcome message
             welcome_msg = (
-                "👋 Welcome to DeFiGuard Alert Agent!\n\n"
+                "👋 **Welcome to DeFiGuard Alert Agent!**\n\n"
                 "I monitor your DeFi portfolio and send real-time risk alerts.\n\n"
-                "Commands:\n"
-                "- `status` - Check current portfolio risk\n"
-                "- `history` - View recent alerts\n"
-                "- `help` - Show this message\n\n"
-                "Your portfolio is being monitored 24/7."
+                "**Commands:**\n\n"
+                "`status - Check current portfolio risk` \n\n"
+                "`history - View recent alerts (last 5)` \n\n"
+                "`help -  Show this message` \n\n"
+                "Your portfolio is being monitored 24/7. "
+                "You'll receive automatic alerts when risks are detected."
             )
             response = create_text_chat(welcome_msg)
             await ctx.send(sender, response)  # type: ignore[arg-type]
@@ -192,8 +193,8 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     latest = user_alerts[-1]
                     status_msg = (
                         f"📊 **Current Portfolio Status**\n\n"
-                        f"Risk Level: {latest['risk_level'].upper()}\n"
-                        f"Risk Score: {latest['risk_score']:.2%}\n"
+                        f"Risk Level: {latest['risk_level'].upper()}\n\n"
+                        f"Risk Score: {latest['risk_score']:.2%}\n\n"
                         f"Last Updated: {latest['timestamp']}\n\n"
                         f"Type `history` for more details."
                     )
@@ -228,15 +229,15 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             elif command == "help":
                 help_msg = (
                     "🆘 **DeFiGuard Help**\n\n"
-                    "**Commands:**\n"
-                    "• `status` - Current portfolio risk level\n"
-                    "• `history` - View recent alerts (last 5)\n"
-                    "• `help` - Show this message\n\n"
-                    "**Risk Levels:**\n"
-                    "🟢 Low - Portfolio is healthy\n"
-                    "🟡 Medium - Monitor closely\n"
-                    "🟠 High - Action recommended\n"
-                    "🔴 Critical - Immediate action needed\n\n"
+                    "**Commands:**\n\n"
+                    "`status - Current portfolio risk level` \n\n"
+                    "`history - View recent alerts (last 5)` \n\n"
+                    "`help - Show this message` \n\n"
+                    "**Risk Levels:**\n\n"
+                    "🟢 **Low** - Portfolio is healthy\n\n"
+                    "🟡 **Medium** - Monitor closely\n\n"
+                    "🟠 **High** - Action recommended\n\n"
+                    "🔴 **Critical** - Immediate action needed\n\n"
                     "You'll receive automatic alerts when risks are detected."
                 )
                 await ctx.send(sender, create_text_chat(help_msg))  # type: ignore[arg-type]
@@ -245,7 +246,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 # Unknown command
                 response_msg = (
                     f"Command '{item.text}' not recognized.\n"
-                    "Type `help` to see available commands."
+                    "Type\n\n `help` \n\nto see available commands."
                 )
                 await ctx.send(sender, create_text_chat(response_msg))  # type: ignore[arg-type]
 
