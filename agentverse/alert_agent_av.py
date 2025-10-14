@@ -21,6 +21,13 @@ class AlertNotification(Model):
     timestamp: str
 
 
+class Portfolio(Model):
+    user_id: str
+    wallets: List[str]
+    chains: List[str]
+    timestamp: str
+
+
 class ChatWrapper(Model):
     message: ChatMessage
 
@@ -41,6 +48,9 @@ alert_agent = Agent(
 )
 
 print(f"Alert Agent Address: {alert_agent.address}")
+
+# Portfolio Monitor Agent address
+PORTFOLIO_AGENT_ADDRESS = "agent1qt2fhu92p6uq3yq692drxrnx74yh7jqs0vjm65st3tz6wej6rxf7qehenpc"
 
 chat_proto = Protocol(spec=chat_protocol_spec)
 
@@ -84,6 +94,63 @@ def get_active_sessions(ctx: Context) -> Dict[str, str]:
     return ctx.storage.get("active_sessions") or {}
 
 
+def get_user_portfolio(ctx: Context, user_id: str) -> Dict:
+    """Get user's registered portfolio"""
+    return ctx.storage.get(f"user_portfolio_{user_id}")
+
+
+def save_user_portfolio(ctx: Context, user_id: str, wallets: List[str], chains: List[str]):
+    """Save user's portfolio registration"""
+    portfolio_data = {
+        "wallets": wallets,
+        "chains": chains,
+        "registered_at": datetime.now(timezone.utc).isoformat()
+    }
+    ctx.storage.set(f"user_portfolio_{user_id}", portfolio_data)
+
+
+def parse_register_command(text: str) -> Dict:
+    """
+    Parse portfolio registration command
+    Expected format: register <wallet_address> <chain1,chain2,...>
+    Example: register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon
+    """
+    parts = text.strip().split()
+
+    if len(parts) < 3:
+        return {
+            "valid": False,
+            "error": "Invalid format. Use: `register <wallet_address> <chains>`"
+        }
+
+    wallet = parts[1]
+    chains_str = parts[2]
+
+    # Basic wallet address validation
+    if not wallet.startswith("0x") or len(wallet) != 42:
+        return {
+            "valid": False,
+            "error": "Invalid wallet address. Must start with '0x' and be 42 characters long"
+        }
+
+    # Parse chains
+    chains = [c.strip().lower() for c in chains_str.split(",")]
+    valid_chains = ["ethereum", "bsc", "polygon", "arbitrum", "optimism", "avalanche"]
+
+    invalid_chains = [c for c in chains if c not in valid_chains]
+    if invalid_chains:
+        return {
+            "valid": False,
+            "error": f"Invalid chain(s): {', '.join(invalid_chains)}. Valid chains: {', '.join(valid_chains)}"
+        }
+
+    return {
+        "valid": True,
+        "wallet": wallet,
+        "chains": chains
+    }
+
+
 def format_alert_message(alert: AlertNotification) -> str:
     """Format alert into human-readable message"""
     risk_emoji = {
@@ -118,7 +185,7 @@ def create_text_chat(text: str) -> ChatMessage:
     """Create a ChatMessage with text content"""
     return ChatMessage(
         timestamp=datetime.now(timezone.utc),
-        msg_id=uuid4(),  # type: ignore[arg-type] # UUID4(str(uuid4()))
+        msg_id=uuid4(),
         content=[TextContent(type="text", text=text)]
     )
 
@@ -161,7 +228,7 @@ async def handle_alert(ctx: Context, sender: str, msg: AlertNotification):
     await ctx.send(sender, Acknowledgement(message=f"Alert processed for {msg.user_id}"))
 
 
-@chat_proto.on_message(ChatMessage)  # type: ignore[arg-type]
+@chat_proto.on_message(ChatMessage)
 async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     """Handle incoming chat messages from ASI:One"""
     ctx.logger.info(f"💬 Received chat message from {sender}")
@@ -181,18 +248,38 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             ctx.logger.info(f"🟢 Chat session started with {sender}")
             add_active_session(ctx, sender, sender)
 
-            welcome_msg = (
-                "👋 **Welcome to DeFiGuard Alert Agent!**\n\n"
-                "I monitor your DeFi portfolio and send real-time risk alerts.\n\n"
-                "**Commands:**\n\n"
-                "`status - Check current portfolio risk` \n\n"
-                "`history - View recent alerts (last 5)` \n\n"
-                "`help -  Show this message` \n\n"
-                "Your portfolio is being monitored 24/7. "
-                "You'll receive automatic alerts when risks are detected."
-            )
+            # Check if user has registered portfolio
+            portfolio = get_user_portfolio(ctx, sender)
+            if portfolio:
+                wallet_count = len(portfolio.get("wallets", []))
+                chain_count = len(portfolio.get("chains", []))
+
+                welcome_msg = (
+                    f"👋 **Welcome back to DeFiGuard!**\n\n"
+                    f"✅ Portfolio registered: {wallet_count} wallet(s) on {chain_count} chain(s)\n\n"
+                    f"Your portfolio is being monitored 24/7.\n\n"
+                    f"**Commands:**\n\n"
+                    f"`status` Check current portfolio risk\n\n"
+                    f"`history` View recent alerts (last 5)\n\n"
+                    f"`portfolio` View registered portfolio\n\n"
+                    f"`register <wallet> <chains>` Update portfolio\n\n"
+                    f"`help` Show this message"
+                )
+            else:
+                welcome_msg = (
+                    "👋 **Welcome to DeFiGuard Alert Agent!**\n\n"
+                    "To get started, register your portfolio:\n\n"
+                    "**Register Format:**\n\n"
+                    "`register <wallet_address> <chain1,chain2,...>`\n\n"
+                    "**Example:**\n\n"
+                    "`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon`\n\n"
+                    "**Supported Chains:**\n\n"
+                    "ethereum, bsc, polygon, arbitrum, optimism, avalanche\n\n"
+                    "Type `help` for more commands."
+                )
+
             response = create_text_chat(welcome_msg)
-            await ctx.send(sender, response)  # type: ignore[arg-type]
+            await ctx.send(sender, response)
 
         elif isinstance(item, TextContent):
             ctx.logger.info(f"📝 Text message: {item.text}")
@@ -203,8 +290,82 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 a for a in all_alerts.values() if a.get("user_id") == sender
             ]
 
-            if command == "status":
-                if user_alerts:
+            # Handle portfolio registration
+            if command.startswith("register "):
+                parse_result = parse_register_command(item.text)
+
+                if not parse_result["valid"]:
+                    error_msg = (
+                        f"❌ {parse_result['error']}\n\n"
+                        f"**Correct format:**\n\n"
+                        f"`register <wallet_address> <chains>`\n\n"
+                        f"**Example:**\n\n"
+                        f"`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon`"
+                    )
+                    await ctx.send(sender, create_text_chat(error_msg))
+                else:
+                    wallet = parse_result["wallet"]
+                    chains = parse_result["chains"]
+
+                    # Save locally
+                    save_user_portfolio(ctx, sender, [wallet], chains)
+
+                    # Send to Portfolio Monitor Agent
+                    portfolio_msg = Portfolio(
+                        user_id=sender,
+                        wallets=[wallet],
+                        chains=chains,
+                        timestamp=datetime.now(timezone.utc).isoformat()
+                    )
+
+                    await ctx.send(PORTFOLIO_AGENT_ADDRESS, portfolio_msg)
+
+                    success_msg = (
+                        f"✅ **Portfolio Registered Successfully!**\n\n"
+                        f"**Wallet:** `{wallet}`\n\n"
+                        f"**Chains:** {', '.join(chains)}\n\n"
+                        f"Your portfolio is now being monitored 24/7.\n\n"
+                        f"You'll receive alerts when risks are detected.\n\n"
+                        f"Type `status` to check your current risk level."
+                    )
+                    await ctx.send(sender, create_text_chat(success_msg))
+                    ctx.logger.info(f"✅ Portfolio registered for {sender}")
+
+            elif command == "portfolio":
+                portfolio = get_user_portfolio(ctx, sender)
+                if portfolio:
+                    wallets = portfolio.get("wallets", [])
+                    chains = portfolio.get("chains", [])
+                    registered_at = portfolio.get("registered_at", "Unknown")
+
+                    portfolio_msg = (
+                        f"📋 **Your Registered Portfolio**\n\n"
+                        f"**Wallets:**\n"
+                    )
+                    for i, wallet in enumerate(wallets, 1):
+                        portfolio_msg += f"{i}. `{wallet}`\n"
+
+                    portfolio_msg += f"\n**Chains:**\n{', '.join(chains)}\n\n"
+                    portfolio_msg += f"**Registered:** {registered_at[:16]}\n\n"
+                    portfolio_msg += f"To update, use:\n`register <new_wallet> <chains>`"
+                else:
+                    portfolio_msg = (
+                        "❌ No portfolio registered yet.\n\n"
+                        "Use: `register <wallet_address> <chains>`\n\n"
+                        "Example:\n`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon`"
+                    )
+
+                await ctx.send(sender, create_text_chat(portfolio_msg))
+
+            elif command == "status":
+                portfolio = get_user_portfolio(ctx, sender)
+                if not portfolio:
+                    status_msg = (
+                        "❌ No portfolio registered.\n\n"
+                        "Please register your portfolio first:\n"
+                        "`register <wallet_address> <chains>`"
+                    )
+                elif user_alerts:
                     latest = user_alerts[-1]
                     status_msg = (
                         f"📊 **Current Portfolio Status**\n\n"
@@ -215,11 +376,12 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     )
                 else:
                     status_msg = (
-                        "No portfolio data available yet.\n\n"
-                        "Make sure your portfolio is registered with DeFiGuard."
+                        "⏳ Portfolio monitoring in progress...\n\n"
+                        "No risk data available yet.\n\n"
+                        "Initial scan may take a few minutes."
                     )
 
-                await ctx.send(sender, create_text_chat(status_msg))  # type: ignore[arg-type]
+                await ctx.send(sender, create_text_chat(status_msg))
 
             elif command == "history":
                 user_alerts = user_alerts[-5:]
@@ -234,37 +396,41 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 else:
                     history_msg = "No alert history found."
 
-                await ctx.send(sender, create_text_chat(history_msg))  # type: ignore[arg-type]
+                await ctx.send(sender, create_text_chat(history_msg))
 
             elif command == "help":
                 help_msg = (
                     "🆘 **DeFiGuard Help**\n\n"
+                    "**Setup:**\n\n"
+                    "`register <wallet> <chains>` - Register portfolio\n\n"
                     "**Commands:**\n\n"
-                    "`status - Current portfolio risk level` \n\n"
-                    "`history - View recent alerts (last 5)` \n\n"
-                    "`help - Show this message` \n\n"
+                    "`status` Current portfolio risk level\n\n"
+                    "`history` View recent alerts (last 5)\n\n"
+                    "`portfolio` View registered portfolio\n\n"
+                    "`help` Show this message\n\n"
                     "**Risk Levels:**\n\n"
                     "🟢 **Low** - Portfolio is healthy\n\n"
                     "🟡 **Medium** - Monitor closely\n\n"
                     "🟠 **High** - Action recommended\n\n"
                     "🔴 **Critical** - Immediate action needed\n\n"
-                    "You'll receive automatic alerts when risks are detected."
+                    "**Supported Chains:**\n\n"
+                    "ethereum, bsc, polygon, arbitrum, optimism, avalanche"
                 )
-                await ctx.send(sender, create_text_chat(help_msg))  # type: ignore[arg-type]
+                await ctx.send(sender, create_text_chat(help_msg))
 
             else:
                 response_msg = (
                     f"Command '{item.text}' not recognized.\n\n"
                     "Type\n\n `help` \n\nto see available commands."
                 )
-                await ctx.send(sender, create_text_chat(response_msg))  # type: ignore[arg-type]
+                await ctx.send(sender, create_text_chat(response_msg))
 
         elif isinstance(item, EndSessionContent):
             ctx.logger.info(f"🔴 Chat session ended with {sender}")
             remove_active_session(ctx, sender)
 
 
-@chat_proto.on_message(ChatAcknowledgement)  # type: ignore[arg-type]
+@chat_proto.on_message(ChatAcknowledgement)
 async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledgement):
     """Handle message acknowledgements"""
     ctx.logger.info(f"Message {msg.acknowledged_msg_id} acknowledged by {sender}")
@@ -281,6 +447,7 @@ async def startup(ctx: Context):
     ctx.logger.info(f"📍 Agent Address: {alert_agent.address}")
     ctx.logger.info("☁️  Running on Agentverse")
     ctx.logger.info("💬 ASI:One Chat Protocol enabled ✓")
+    ctx.logger.info(f"🔗 Portfolio Agent: {PORTFOLIO_AGENT_ADDRESS}")
     ctx.logger.info("=" * 60)
 
 
