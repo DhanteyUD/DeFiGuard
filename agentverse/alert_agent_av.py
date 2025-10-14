@@ -7,7 +7,7 @@ from uagents_core.contrib.protocols.chat import (
     EndSessionContent,
     chat_protocol_spec,
 )
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from typing import List, Dict
 
@@ -151,6 +151,28 @@ def parse_register_command(text: str) -> Dict:
     }
 
 
+def get_risk_level_emoji(risk_level: str) -> str:
+    """Get emoji for risk level"""
+    risk_emoji = {
+        "low": "🟢",
+        "medium": "🟡",
+        "high": "🟠",
+        "critical": "🔴"
+    }
+    return risk_emoji.get(risk_level.lower(), "⚪")
+
+
+def get_risk_action(risk_level: str) -> str:
+    """Get recommended action based on risk level"""
+    actions = {
+        "low": "Continue monitoring",
+        "medium": "Review within week",
+        "high": "Rebalance within 24h",
+        "critical": "Review immediately"
+    }
+    return actions.get(risk_level.lower(), "Monitor portfolio")
+
+
 def format_alert_message(alert: AlertNotification) -> str:
     """Format alert into human-readable message"""
     risk_emoji = {
@@ -188,6 +210,26 @@ def create_text_chat(text: str) -> ChatMessage:
         msg_id=uuid4(),  # type: ignore[arg-type]
         content=[TextContent(type="text", text=text)]
     )
+
+
+def format_timestamp(iso_timestamp: str) -> str:
+    """Convert ISO timestamp to readable format: 'Oct 14, 2025 10:30 AM'"""
+    try:
+        dt = datetime.fromisoformat(iso_timestamp.replace('Z', '+00:00'))
+        # Convert to UTC+1 (add 1 hour)
+        dt = dt.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=1)))
+        return dt.strftime('%b %d, %Y %I:%M %p')
+    except (ValueError, AttributeError):
+        return iso_timestamp[:16]
+
+
+def get_default_risk_status() -> Dict:
+    """Return default risk status for new portfolios"""
+    return {
+        "risk_level": "low",
+        "risk_score": 0.0,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
 
 
 @alert_agent.on_message(model=AlertNotification)
@@ -357,7 +399,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         portfolio_msg += f"{i}. `{wallet}`\n\n"
 
                     portfolio_msg += f"\n**Chains:**\n{', '.join(chains)}\n\n"
-                    portfolio_msg += f"**Registered:** {registered_at[:16]}\n\n"
+                    portfolio_msg += f"**Registered:** {format_timestamp(registered_at)}\n\n"
                     portfolio_msg += f"To update, use:\n\n`register <new_wallet> <chains>`"
                 else:
                     portfolio_msg = (
@@ -376,37 +418,41 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         "Please register your portfolio first:\n"
                         "`register <wallet_address> <chains>`"
                     )
-                elif user_alerts:
-                    latest = user_alerts[-1]
+                else:
+                    # Get latest alert or default status
+                    if user_alerts:
+                        latest = user_alerts[-1]
+                    else:
+                        latest = get_default_risk_status()
+
+                    emoji = get_risk_level_emoji(latest['risk_level'])
+                    action = get_risk_action(latest['risk_level'])
+
                     status_msg = (
                         f"📊 **Current Portfolio Status**\n\n"
-                        f"**Risk Level:** {latest['risk_level'].upper()}\n\n"
-                        f"**Risk Score:** {latest['risk_score']:.2%}\n\n"
-                        f"**Last Updated:** {latest['timestamp']}\n\n"
-                        f"Type `history` for more details."
-                    )
-                else:
-                    status_msg = (
-                        "✅ **Portfolio Active**\n\n"
-                        "Your portfolio is registered and being monitored.\n\n"
-                        "✓ No risks detected yet\n\n"
-                        "Alerts will appear here automatically when risks are found."
+                        f"{emoji} **Risk Level:** {latest['risk_level'].upper()}\n\n"
+                        f"**Risk Score:** {latest['risk_score']:.0%}\n\n"
+                        f"**Last Updated:** {format_timestamp(latest['timestamp'])}\n\n"
+                        f"**Action:** {action}\n\n"
+                        f"Type\n\n `history` \n\nfor more details."
                     )
 
                 await ctx.send(sender, create_text_chat(status_msg))
 
             elif command == "history":
-                user_alerts = user_alerts[-5:]
-                if user_alerts:
+                user_alerts_list = user_alerts[-5:]
+                if user_alerts_list:
                     history_msg = "📜 **Recent Alerts**\n\n"
-                    for i, alert in enumerate(reversed(user_alerts), 1):
+                    for i, alert in enumerate(reversed(user_alerts_list), 1):
+                        emoji = get_risk_level_emoji(alert['risk_level'])
+                        timestamp_str = alert['timestamp'][:16].replace('T', ' ')
                         history_msg += (
-                            f"{i}. {alert['risk_level'].upper()} "
-                            f"({alert['risk_score']:.1%}) - "
-                            f"{alert['timestamp'][:16]}\n"
+                            f"{i}. {emoji} {alert['risk_level'].upper()} "
+                            f"({alert['risk_score']:.0%}) - "
+                            f"{timestamp_str}\n"
                         )
                 else:
-                    history_msg = "No alert history found."
+                    history_msg = "📜 **Recent Alerts**\n\nNo alert history found."
 
                 await ctx.send(sender, create_text_chat(history_msg))
 
@@ -435,10 +481,10 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
                     "**Risk Levels:**\n\n"
 
-                    "🟢 **Low** - Portfolio is healthy\n\n"
-                    "🟡 **Medium** - Monitor closely\n\n"
-                    "🟠 **High** - Action recommended\n\n"
-                    "🔴 **Critical** - Immediate action needed\n\n"
+                    "🟢 **Low** (0-30%) - Portfolio is healthy - Continue monitoring\n\n"
+                    "🟡 **Medium** (30-50%) - Monitor closely - Review within week\n\n"
+                    "🟠 **High** (50-70%) - Action recommended - Rebalance within 24h\n\n"
+                    "🔴 **Critical** (70-100%) - Immediate action - Review immediately\n\n"
 
                     "**Supported Chains:**\n\n"
 
