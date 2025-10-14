@@ -262,19 +262,19 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     f"**Commands:**\n\n"
 
                     f"`status` \n"
-                    f"To check current portfolio risk\n\n"
+                    f"Check current portfolio risk level\n\n"
 
                     f"`history` \n"
-                    f"To view recent alerts (last 5)\n\n"
+                    f"View recent alerts (last 5)\n\n"
 
                     f"`portfolio` \n"
-                    f"To view registered portfolio\n\n"
+                    f"View registered portfolio\n\n"
 
                     f"`register <wallet> <chains>` \n"
-                    f"To update portfolio\n\n"
+                    f"Update portfolio\n\n"
 
                     f"`help` \n"
-                    f"To show this message"
+                    f"Show command reference"
                 )
             else:
                 welcome_msg = (
@@ -431,7 +431,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     "View registered portfolio\n\n"
 
                     "`help` \n"
-                    "Show this message\n\n"
+                    "Show command reference\n\n"
 
                     "**Risk Levels:**\n\n"
 
