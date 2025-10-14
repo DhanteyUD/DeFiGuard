@@ -38,7 +38,7 @@ market_agent = Agent(
     seed=os.getenv("MARKET_AGENT_SEED", "market_demo_seed"),
     port=8003,
     endpoint=["http://localhost:8003/submit"],
-    mailbox=False # type: ignore[arg-type]
+    # mailbox=False
 )
 
 # fund_agent_if_low(str(market_agent.wallet.address()))

@@ -9,8 +9,8 @@ from uagents_core.contrib.protocols.chat import (
 )
 from datetime import datetime, timezone
 from uuid import uuid4
-from pydantic import UUID4
 from typing import List, Dict
+
 
 class AlertNotification(Model):
     user_id: str
@@ -35,15 +35,15 @@ class ChatAckWrapper(Model):
 
 
 alert_agent = Agent(
-    name="alert_system",
-    mailbox=True,  # type: ignore[arg-type]
-    publish_agent_details = True  # type: ignore[arg-type]
+    name="alert_agent",
+    mailbox=True,
+    publish_agent_details=True
 )
 
 print(f"Alert Agent Address: {alert_agent.address}")
 
+chat_proto = Protocol(spec=chat_protocol_spec)
 
-chat_proto = Protocol(spec=chat_protocol_spec) # type: ignore[arg-type]
 
 def add_alert_key(ctx: Context, key: str):
     """Add alert key to master list"""
@@ -118,7 +118,7 @@ def create_text_chat(text: str) -> ChatMessage:
     """Create a ChatMessage with text content"""
     return ChatMessage(
         timestamp=datetime.now(timezone.utc),
-        msg_id=UUID4(str(uuid4())),
+        msg_id=uuid4(),  # type: ignore[arg-type] # UUID4(str(uuid4()))
         content=[TextContent(type="text", text=text)]
     )
 
@@ -161,7 +161,7 @@ async def handle_alert(ctx: Context, sender: str, msg: AlertNotification):
     await ctx.send(sender, Acknowledgement(message=f"Alert processed for {msg.user_id}"))
 
 
-@chat_proto.on_message(ChatMessage) # type: ignore[arg-type]
+@chat_proto.on_message(ChatMessage)  # type: ignore[arg-type]
 async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     """Handle incoming chat messages from ASI:One"""
     ctx.logger.info(f"💬 Received chat message from {sender}")
@@ -182,12 +182,12 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             add_active_session(ctx, sender, sender)
 
             welcome_msg = (
-                "👋 **Welcome to DeFiGuard Alert System!**\n\n"
+                "👋 **Welcome to DeFiGuard Alert Agent!**\n\n"
                 "I monitor your DeFi portfolio and send real-time risk alerts.\n\n"
-                "**Commands:**\n"
-                "• `status` - Check current portfolio risk\n"
-                "• `history` - View recent alerts (last 5)\n"
-                "• `help` - Show this message\n\n"
+                "**Commands:**\n\n"
+                "`status - Check current portfolio risk` \n\n"
+                "`history - View recent alerts (last 5)` \n\n"
+                "`help -  Show this message` \n\n"
                 "Your portfolio is being monitored 24/7. "
                 "You'll receive automatic alerts when risks are detected."
             )
@@ -208,8 +208,8 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     latest = user_alerts[-1]
                     status_msg = (
                         f"📊 **Current Portfolio Status**\n\n"
-                        f"**Risk Level:** {latest['risk_level'].upper()}\n"
-                        f"**Risk Score:** {latest['risk_score']:.2%}\n"
+                        f"**Risk Level:** {latest['risk_level'].upper()}\n\n"
+                        f"**Risk Score:** {latest['risk_score']:.2%}\n\n"
                         f"**Last Updated:** {latest['timestamp']}\n\n"
                         f"Type `history` for more details."
                     )
@@ -239,14 +239,14 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             elif command == "help":
                 help_msg = (
                     "🆘 **DeFiGuard Help**\n\n"
-                    "**Commands:**\n"
-                    "• `status` - Current portfolio risk level\n"
-                    "• `history` - View recent alerts (last 5)\n"
-                    "• `help` - Show this message\n\n"
-                    "**Risk Levels:**\n"
-                    "🟢 **Low** - Portfolio is healthy\n"
-                    "🟡 **Medium** - Monitor closely\n"
-                    "🟠 **High** - Action recommended\n"
+                    "**Commands:**\n\n"
+                    "`status - Current portfolio risk level` \n\n"
+                    "`history - View recent alerts (last 5)` \n\n"
+                    "`help - Show this message` \n\n"
+                    "**Risk Levels:**\n\n"
+                    "🟢 **Low** - Portfolio is healthy\n\n"
+                    "🟡 **Medium** - Monitor closely\n\n"
+                    "🟠 **High** - Action recommended\n\n"
                     "🔴 **Critical** - Immediate action needed\n\n"
                     "You'll receive automatic alerts when risks are detected."
                 )
@@ -255,7 +255,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             else:
                 response_msg = (
                     f"Command '{item.text}' not recognized.\n\n"
-                    "Type `help` to see available commands."
+                    "Type\n\n `help` \n\nto see available commands."
                 )
                 await ctx.send(sender, create_text_chat(response_msg))  # type: ignore[arg-type]
 

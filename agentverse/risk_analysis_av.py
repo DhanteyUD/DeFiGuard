@@ -46,7 +46,7 @@ class ErrorResponse(Model):
 
 risk_agent = Agent(
     name="risk_analysis",
-    mailbox=True  # type: ignore[arg-type]
+    mailbox=True
 )
 
 print(f"Risk Analysis Agent Address: {risk_agent.address}")

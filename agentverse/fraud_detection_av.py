@@ -26,7 +26,7 @@ class ErrorResponse(Model):
 
 fraud_agent = Agent(
     name="fraud_detection",
-    mailbox=True  # type: ignore[arg-type]
+    mailbox=True
 )
 
 print(f"Fraud Detection Agent Address: {fraud_agent.address}")

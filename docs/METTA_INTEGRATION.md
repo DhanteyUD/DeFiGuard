@@ -360,9 +360,8 @@ def query_asset_risk_metta(token: str) -> str:
 ## 📖 Resources
 
 ### SingularityNET MeTTa:
-- **Documentation**: https://metta-lang.dev/
-- **GitHub**: https://github.com/trueagi-io/hyperon-experimental
-- **Tutorial**: https://wiki.opencog.org/w/MeTTa
+- **Documentation**: [https://metta-lang.dev/docs](https://metta-lang.dev/docs/learn/tutorials/python_use/metta_python_basics.html)
+- **GitHub**: https://github.com/trueagi-io/hyperon-experimental/
 
 ### DeFiGuard Implementation:
 - **Knowledge Base**: `metta/risk_knowledge.metta`
