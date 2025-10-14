@@ -1,0 +1,32 @@
+{
+  "user_id": "test_user_volatility",
+  "total_value_usd": 50000,
+  "assets": [
+    {
+      "token": "bitcoin",
+      "balance": 0.5,
+      "price": 45000,
+      "value_usd": 22500,
+      "chain": "ethereum",
+      "change_24h": -15.8
+    },
+    {
+      "token": "ethereum",
+      "balance": 10,
+      "price": 2500,
+      "value_usd": 25000,
+      "chain": "ethereum",
+      "change_24h": 28.5
+    },
+    {
+      "token": "usdc",
+      "balance": 2500,
+      "price": 1.0,
+      "value_usd": 2500,
+      "chain": "ethereum",
+      "change_24h": 0.1
+    }
+  ],
+  "timestamp": "2025-10-14T22:41:55.052847+00:00",
+  "risk_score": 0.58
+}

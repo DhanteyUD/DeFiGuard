@@ -1,0 +1,32 @@
+{
+  "user_id": "test_user_medium_risk",
+  "total_value_usd": 50000,
+  "assets": [
+    {
+      "token": "ethereum",
+      "balance": 15,
+      "price": 2500,
+      "value_usd": 37500,
+      "chain": "ethereum",
+      "change_24h": 5.2
+    },
+    {
+      "token": "dai",
+      "balance": 5000,
+      "price": 1.0,
+      "value_usd": 5000,
+      "chain": "ethereum",
+      "change_24h": 0.05
+    },
+    {
+      "token": "cardano",
+      "balance": 5000,
+      "price": 2.5,
+      "value_usd": 12500,
+      "chain": "ethereum",
+      "change_24h": -3.8
+    }
+  ],
+  "timestamp": "2025-10-14T22:41:55.052833+00:00",
+  "risk_score": 0.45
+}

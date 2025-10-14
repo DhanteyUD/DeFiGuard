@@ -1,0 +1,24 @@
+{
+  "user_id": "test_user_high_risk",
+  "total_value_usd": 50000,
+  "assets": [
+    {
+      "token": "SafeMoon",
+      "balance": 100000000,
+      "price": 0.00025,
+      "value_usd": 25000,
+      "chain": "bsc",
+      "change_24h": -8.5
+    },
+    {
+      "token": "baby_ethereum",
+      "balance": 50000000,
+      "price": 0.0005,
+      "value_usd": 25000,
+      "chain": "bsc",
+      "change_24h": 12.3
+    }
+  ],
+  "timestamp": "2025-10-14T22:41:55.052839+00:00",
+  "risk_score": 0.72
+}

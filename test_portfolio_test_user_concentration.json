@@ -1,0 +1,16 @@
+{
+  "user_id": "test_user_concentration",
+  "total_value_usd": 50000,
+  "assets": [
+    {
+      "token": "ethereum",
+      "balance": 20,
+      "price": 2500,
+      "value_usd": 50000,
+      "chain": "ethereum",
+      "change_24h": 3.2
+    }
+  ],
+  "timestamp": "2025-10-14T22:41:55.052850+00:00",
+  "risk_score": 0.65
+}
