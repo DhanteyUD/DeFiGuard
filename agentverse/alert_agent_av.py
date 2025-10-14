@@ -185,7 +185,7 @@ def create_text_chat(text: str) -> ChatMessage:
     """Create a ChatMessage with text content"""
     return ChatMessage(
         timestamp=datetime.now(timezone.utc),
-        msg_id=uuid4(),
+        msg_id=uuid4(), # type: ignore[arg-type]
         content=[TextContent(type="text", text=text)]
     )
 
