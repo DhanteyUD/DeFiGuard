@@ -66,7 +66,7 @@ async def fetch_token_price(token_symbol: str) -> Dict:  # type: ignore[arg-type
         return {"price": 0, "change_24h": 0}
 
 
-async def get_wallet_balance(wallet: str, chain: str) -> List[Dict]:
+async def get_wallet_balance(ctx: Context, wallet: str, chain: str) -> List[Dict]:
     """Get real wallet balances using Web3"""
 
     chain_rpc = {
@@ -128,6 +128,10 @@ async def get_wallet_balance(wallet: str, chain: str) -> List[Dict]:
     enriched_balances = []
     for asset in balances:
         price_data = await fetch_token_price(asset["token"])
+
+        ctx.logger.info(
+            f"[{asset['chain'].upper()}] {asset['symbol']}: ${price_data['price']:.2f} (24h Change: {price_data['change_24h']:.2f}%)")
+
         enriched_balances.append({
             "token": asset["symbol"],
             "balance": asset["balance"],
@@ -210,7 +214,7 @@ async def scan_portfolio(ctx: Context, user_id: str):
     for wallet in portfolio["wallets"]:
         for chain in portfolio["chains"]:
             try:
-                balances = await get_wallet_balance(wallet, chain)
+                balances = await get_wallet_balance(ctx, wallet, chain)
                 all_assets.extend(balances)
                 total_value += sum(b["value_usd"] for b in balances)
             except Exception as e:

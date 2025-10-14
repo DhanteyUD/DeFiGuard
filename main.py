@@ -26,8 +26,8 @@ def print_banner():
     print(banner)
 
     print(f"  ✓ Portfolio Monitor   : {portfolio_agent.address[:16]}...")
-    print(f"  ✓ Risk Analyzer       : {risk_agent.address[:16]}...")
-    print(f"  ✓ Alert System        : {alert_agent.address[:16]}...")
+    print(f"  ✓ Risk Analysis       : {risk_agent.address[:16]}...")
+    print(f"  ✓ Alert Agent         : {alert_agent.address[:16]}...")
     print(f"  ✓ Market Data         : {market_agent.address[:16]}...")
     print(f"  ✓ Fraud Detection     : {fraud_agent.address[:16]}...")
     print("\n  🚀 All agents initialized successfully!")

@@ -1,0 +1,16 @@
+{
+  "user_id": "test_user_critical_risk",
+  "total_value_usd": 50000,
+  "assets": [
+    {
+      "token": "elon_inu_moon",
+      "balance": 1000000000,
+      "price": 5e-05,
+      "value_usd": 50000,
+      "chain": "bsc",
+      "change_24h": 45.2
+    }
+  ],
+  "timestamp": "2025-10-14T22:41:55.052842+00:00",
+  "risk_score": 0.92
+}

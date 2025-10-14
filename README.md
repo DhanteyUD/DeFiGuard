@@ -120,7 +120,7 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 ## ✨ Features
 
 ### 🔍 Real-Time Portfolio Monitoring
-- ✅ **Multi-chain support**: Ethereum, Polygon, BSC, Arbitrum
+- ✅ **Multi-chain support**: Ethereum, Polygon, BSC
 - ✅ **Automatic balance tracking**: Every 5 minutes
 - ✅ **Historical snapshots**: Track portfolio changes over time
 - ✅ **Asset valuation**: Real-time USD pricing via CoinGecko
@@ -140,7 +140,7 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 ### 🚨 Intelligent Alerts (ASI:One)
 - ✅ **Risk-based levels**: Low → Medium → High → Critical
 - ✅ **ASI:One chat integration**: Natural language interface
-- ✅ **Interactive commands**: `status`, `history`, `help`
+- ✅ **Interactive commands**: `status`, `history`, `portfolio`, `register  <wallet> <chains>`, `help`
 - ✅ **Customizable thresholds**: Personalized risk tolerance
 - ✅ **Alert history**: Track past notifications
 - ✅ **Real-time delivery**: Instant notifications
@@ -165,7 +165,7 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 
 ## 🤖 Agent Addresses
 
-Local agents (community version): See [agents](agents)
+Local agents (community/open source version): See [agents](agents)
 
 | Agent                 | Address                                                             | Port | 
 |-----------------------|---------------------------------------------------------------------|------|
@@ -306,8 +306,8 @@ python main.py
     📊 Agent Status:
     
   ✓ Portfolio Monitor   : agent1qv3pywlds6...
-  ✓ Risk Analyzer       : agent1qtrn82fz9t...
-  ✓ Alert System        : agent1q2zusjcsgl...
+  ✓ Risk Analysis       : agent1qtrn82fz9t...
+  ✓ Alert Agent         : agent1q2zusjcsgl...
   ✓ Market Data         : agent1qgwdvuucfh...
   ✓ Fraud Detection     : agent1q0x3wcul6a...
 
@@ -329,25 +329,57 @@ python main.py
 3. **Start Chatting**:
 
 ```
-You: help
-Agent: 👋 Welcome to DeFiGuard Alert System!
-       Commands: status, history, help
+User: [Opens Chat]
+Agent: 👋 Welcome to DeFiGuard Alert Agent!
+       
+       To get started, register your portfolio:
+       
+       Format: register <wallet_address> <chains>
+       Example: register 0x742d35...0bEb ethereum,polygon
+       
+       Type 'help' for more commands.
 
-You: status
+User: register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon
+Agent: ✅ Portfolio Registered Successfully!
+       
+       Wallet: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+       Chains: ethereum, polygon
+       
+       Your portfolio is now being monitored 24/7.
+       Type 'status' to check your current risk level.
+
+User: portfolio
+Agent: 📋 Your Registered Portfolio
+       
+       Wallets:
+       1. 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+       
+       Chains: ethereum, polygon
+       Registered: 2025-10-14T10:35
+       
+       To update: register <new_wallet> <chains>
+
+User: status
 Agent: 📊 Current Portfolio Status
        Risk Level: MEDIUM
        Risk Score: 45%
-       Last Updated: 2025-10-12T10:30
+       Last Updated: 2025-10-14T10:30
+       
+       Type 'history' for more details.
 
-You: history
+User: history
 Agent: 📜 Recent Alerts
-       1. MEDIUM (45%) - Today 10:30
-       2. LOW (30%) - Yesterday
+       1. MEDIUM (45%) - 2025-10-14 10:30
+       2. LOW (32%) - 2025-10-13 15:20
+       3. LOW (28%) - 2025-10-12 09:15
 ```
 
+
 **Available Commands:**
+- `register <wallet> <chains>` - Register portfolio
 - `status` - Check current portfolio risk level
 - `history` - View recent alerts (last 5)
+- `portfolio` - View registered portfolio
 - `help` - Show command reference
 
 ### Method 2: Via Agentverse AI
@@ -537,7 +569,7 @@ python verify_metta.py
 
 ### Project Documentation
 
-> - **[README.md](README.md)** - This file (project overview)
+> - **[README.md](README.md)** - Current file (project overview)
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Agentverse deployment guide
 - **[docs/METTA_INTEGRATION.md](docs/METTA_INTEGRATION.md)** - SingularityNET MeTTa integration details
 - **[LICENSE](LICENSE)** - MIT License
