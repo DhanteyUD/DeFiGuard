@@ -46,7 +46,7 @@ portfolio_agent = Agent(
     seed=os.getenv("PORTFOLIO_AGENT_SEED", "portfolio_demo_seed"),
     port=8000,
     endpoint=["http://localhost:8000/submit"],
-    # mailbox=False  # type: ignore[arg-type]
+    # mailbox=False
 )
 
 # fund_agent_if_low(str(portfolio_agent.wallet.address()))

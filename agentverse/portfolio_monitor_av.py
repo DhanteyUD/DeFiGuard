@@ -36,7 +36,7 @@ class MessageResponse(Model):
 
 portfolio_agent = Agent(
     name="portfolio_monitor",
-    mailbox=True  # type: ignore[arg-type]
+    mailbox=True
 )
 
 print(f"Portfolio Monitor Agent Address: {portfolio_agent.address}")

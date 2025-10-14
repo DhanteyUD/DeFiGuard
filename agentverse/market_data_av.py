@@ -30,7 +30,7 @@ class ErrorResponse(Model):
 
 market_agent = Agent(
     name="market_data",
-    mailbox=True  # type: ignore[arg-type]
+    mailbox=True
 )
 
 print(f"Market Data Agent Address: {market_agent.address}")

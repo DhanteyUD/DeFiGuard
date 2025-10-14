@@ -47,8 +47,8 @@ alert_agent = Agent(
     seed=os.getenv("ALERT_AGENT_SEED", "alert_demo_seed"),
     port=8002,
     endpoint=["http://localhost:8002/submit"],
-    # mailbox=False,  # type: ignore[arg-type] # Required for ASI:One
-    # publish_agent_details = True # type: ignore[arg-type] # Required for ASI:One
+    # mailbox=False, # Required for ASI:One
+    # publish_agent_details = True # Required for ASI:One
 )
 
 # fund_agent_if_low(str(alert_agent.wallet.address()))

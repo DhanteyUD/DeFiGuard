@@ -36,8 +36,8 @@ class ChatAckWrapper(Model):
 
 alert_agent = Agent(
     name="alert_agent",
-    mailbox=True,  # type: ignore[arg-type]
-    publish_agent_details=True  # type: ignore[arg-type]
+    mailbox=True,
+    publish_agent_details=True
 )
 
 print(f"Alert Agent Address: {alert_agent.address}")

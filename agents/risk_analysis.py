@@ -55,7 +55,7 @@ risk_agent = Agent(
     seed=os.getenv("RISK_AGENT_SEED", "risk_demo_seed"),
     port=8001,
     endpoint=["http://localhost:8001/submit"],
-    # mailbox=False  # type: ignore[arg-type]
+    # mailbox=False
 )
 
 # fund_agent_if_low(str(risk_agent.wallet.address()))
