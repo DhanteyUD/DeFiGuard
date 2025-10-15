@@ -2,7 +2,7 @@
 
 ![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
 ![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
-![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
+![Python](https://img.shields.io/badge/python-3.12-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 **DeFiGuard** is an autonomous, decentralized portfolio risk management system powered by the ASI Alliance. It monitors crypto portfolios across multiple chains, analyzes risks using AI reasoning with SingularityNET's MeTTa, detects fraud, and provides real-time alerts through ASI:One chat interface.
