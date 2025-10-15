@@ -165,7 +165,7 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 
 ## 🤖 Agent Addresses
 
-Local agents (community/open source version): See [agents](agents)
+Local agents (for community & open source): See [agents](agents)
 
 | Agent                 | Address                                                             | Port | 
 |-----------------------|---------------------------------------------------------------------|------|
@@ -190,7 +190,8 @@ All agents deployed on **[Agentverse](https://agentverse.ai/agents)** (Fetch.ai 
 **📖 Individual Agent Documentation:** See [docs/agents](docs/agents) for detailed README for each agent.
 
 
-<img width="1101" height="739" alt="Screenshot 2025-10-15 at 3 15 19 AM" src="https://github.com/user-attachments/assets/e49b921d-3735-4bab-a5ce-643ddfd3bed6" />
+<img width="1097" height="735" alt="Screenshot 2025-10-15 at 10 01 42 AM" src="https://github.com/user-attachments/assets/0f75d8ba-5f2b-4596-96b7-2ba219a988c7" />
+
 
 
 ---
