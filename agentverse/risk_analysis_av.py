@@ -151,7 +151,6 @@ def query_asset_risk_metta(token: str) -> str:
             print(f"🧠 MeTTa: {token} risk = {risk_level}")
             return risk_level
 
-        # Check for risk patterns
         for pattern in FALLBACK_KNOWLEDGE["high_risk_patterns"]:
             if pattern in token.lower():
                 pattern_query = f"!(match &self (has-risk-pattern {pattern} $level) $level)"
@@ -452,7 +451,7 @@ async def analyze_risk(ctx: Context, sender: str, msg: RiskAnalysisRequest):
         # Send report back
         await ctx.send(sender, report)
 
-        alert_agent_address = "agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f"
+        alert_agent_address = "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun"
         if should_alert and alert_agent_address:
             await ctx.send(alert_agent_address, report)
 
