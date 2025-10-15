@@ -189,6 +189,10 @@ All agents deployed on **[Agentverse](https://agentverse.ai/agents)** (Fetch.ai 
 
 **📖 Individual Agent Documentation:** See [docs/agents](docs/agents) for detailed README for each agent.
 
+
+<img width="1101" height="739" alt="Screenshot 2025-10-15 at 3 15 19 AM" src="https://github.com/user-attachments/assets/e49b921d-3735-4bab-a5ce-643ddfd3bed6" />
+
+
 ---
 
 ## 🚀 Quick Start
