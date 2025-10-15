@@ -9,6 +9,7 @@ from uagents_core.contrib.protocols.chat import (
 )
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
+from pydantic import UUID4
 from typing import List, Dict
 from web3 import Web3
 import re
@@ -347,7 +348,7 @@ def create_text_chat(text: str) -> ChatMessage:
     """Create a ChatMessage with text content"""
     return ChatMessage(
         timestamp=datetime.now(timezone.utc),
-        msg_id=uuid4(),  # type: ignore[arg-type]
+        msg_id=UUID(str(uuid4())),
         content=[TextContent(type="text", text=text)]
     )
 
@@ -431,40 +432,40 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 welcome_msg = (
                     f"👋 **Welcome back to DeFiGuard!**\n\n"
                     f"✅ Portfolio registered:\n\n"
-                    
+
                     f"• {wallet_count} wallet(s)\n"
                     f"• {len(chains)} chain(s): {', '.join(chain_names)}\n\n"
-                    
+
                     f"Your portfolio is being monitored 24/7 across all chains.\n\n"
 
                     f"**Commands:**\n\n"
-                    
+
                     f"`status` \n"
                     f"Check curren risk\n\n"
-                    
+
                     f"`history` \n"
                     f"View recent alerts\n\n"
-                    
+
                     f"`portfolio` \n"
                     f"View registered wallet(s)\n\n"
-                    
+
                     f"`chains` \n"
                     f"View supported chains\n\n"
-                    
+
                     f"`register <wallet> <chains>` \n"
                     f"Update portfolio\n\n"
-                    
+
                     f"`help` \n"
                     f"Show all commands"
                 )
             else:
                 welcome_msg = (
                     "👋 **Welcome to DeFiGuard!**\n\n"
-                    
+
                     "Multi-chain portfolio risk monitoring with AI.\n\n"
-                    
+
                     "**Get Started:**\n\n"
-                    
+
                     "`register <wallet_address> <chains>`\n\n"
 
                     "**Example:**\n\n"
@@ -619,24 +620,24 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     "🆘 **DeFiGuard Commands**\n\n"
 
                     "**Setup:**\n\n"
-                    
+
                     "`register <wallet> <chains>` \n"
                     "Register portfolio\n\n"
 
                     "**Monitoring:**\n\n"
-                    
+
                     "`status` \n"
                     "Current risk level\n\n"
-                    
+
                     "`history` \n"
                     "Recent alerts\n\n"
-                    
+
                     "`portfolio` \n"
                     "View registered wallet(s)\n\n"
-                    
+
                     "`chains` \n"
                     "List supported chains\n\n"
-                    
+
                     "`help` \n"
                     "Show command message\n\n"
 
@@ -667,7 +668,8 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 @chat_proto.on_message(ChatAcknowledgement)
 async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledgement):
     """Handle message acknowledgements"""
-    ctx.logger.info(f"✓ Message {msg.acknowledged_msg_id} acknowledged")
+
+    ctx.logger.info(f"✓ Message {msg.acknowledged_msg_id} acknowledged by {sender}")
 
 
 alert_agent.include(chat_proto, publish_manifest=True)
