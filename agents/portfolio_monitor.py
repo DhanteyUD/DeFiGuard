@@ -173,7 +173,7 @@ async def scan_portfolio(ctx: Context, user_id: str):
     """Scan portfolio and create snapshot"""
     if user_id not in portfolios_db:
         ctx.logger.warning(f"Portfolio {user_id} not found")
-        return
+        return None
 
     portfolio = portfolios_db[user_id]
     all_assets = []
