@@ -204,7 +204,7 @@ async def handle_market_request(ctx: Context, sender: str, msg: MarketDataReques
                 token_data = await fetch_token_data(token_id)
                 data[token_id] = token_data
 
-                alert_agent_address = "agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f"
+                alert_agent_address = "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun"
 
                 if "current_price" in token_data and "error" not in token_data:
                     alert = detect_significant_change(
@@ -263,7 +263,7 @@ async def update_market_data(ctx: Context):
             if alert:
                 ctx.logger.warning(f"📈 Market alert: {alert.message}")
 
-                alert_agent_address = "agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f"
+                alert_agent_address = "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun"
                 await ctx.send(alert_agent_address, alert)
 
                 await safe_set(ctx, "market_cache", market_cache)
