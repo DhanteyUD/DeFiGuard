@@ -274,7 +274,7 @@ def parse_register_command(text: str) -> Dict:
             "valid": False,
             "error": (
                     f"❌ Invalid chain(s):\n\n" +
-                    "\n".join(f"• {err}" for err in invalid_chains) +
+                    "\n\n".join(f"• {err}" for err in invalid_chains) +
                     f"\n\n**Supported chains:**\n\n{supported_list}"
             )
         }
@@ -439,22 +439,22 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
                     f"**Commands:**\n\n"
 
-                    f"`status` \n"
+                    f"`status` \n\n"
                     f"Check current risk\n\n"
 
-                    f"`history` \n"
+                    f"`history` \n\n"
                     f"View recent alerts\n\n"
 
-                    f"`portfolio` \n"
+                    f"`portfolio` \n\n"
                     f"View registered wallet(s)\n\n"
 
-                    f"`chains` \n"
+                    f"`chains` \n\n"
                     f"View supported chains\n\n"
 
-                    f"`register <wallet> <chains>` \n"
+                    f"`register <wallet> <chains>` \n\n"
                     f"Update portfolio\n\n"
 
-                    f"`help` \n"
+                    f"`help` \n\n"
                     f"Show all commands"
                 )
             else:
@@ -471,9 +471,9 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     "`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon,arbitrum`\n\n"
 
                     "**Supported:**\n\n"
-                    f"{len(SUPPORTED_CHAINS)} chains including Ethereum, BSC, Polygon, Arbitrum, Optimism, Avalanche, Base & more!\n\n"
+                    f"{len(SUPPORTED_CHAINS)} chains including Ethereum, BSC, Polygon, Arbitrum, Optimism & more!\n\n"
 
-                    "Type\n\n `chains` \n\nto see all supported chains.\n"
+                    "Type\n\n `chains` \n\nto see all supported chains.\n\n"
                     "Type\n\n `help` \n\nfor more commands."
                 )
 
@@ -517,7 +517,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     success_msg = (
                             f"✅ **Portfolio Registered!**\n\n"
                             f"**Wallet:** \n\n`{wallet[:10]}...{wallet[-8:]}`\n\n"
-                            f"**Monitoring {len(chains)} chain(s):**\n" +
+                            f"**Monitoring {len(chains)} chain(s):**\n\n" +
                             "\n".join(f"• {name}" for name in chain_names) +
                             f"\n\n🛡️ Your portfolio is now protected 24/7\n\n"
                             f"You'll receive alerts automatically when risks are detected.\n\n"
@@ -531,12 +531,14 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     f"🔗 **Supported Chains ({len(SUPPORTED_CHAINS)})**\n\n"
                 )
                 for i, (key, name) in enumerate(SUPPORTED_CHAINS.items(), 1):
-                    chains_msg += f"{i}. **{name}** (`{key}`)\n"
+                    chains_msg += f"{i}. **{name}** `{key}`\n\n"
 
                 chains_msg += (
                     f"\n**Usage:**\n\n"
+                    f"comma-separated:\n\n"
                     f"`register <wallet> ethereum,bsc,polygon`\n\n"
-                    f"Or space-separated:\n\n"
+                    f"Or\n\n"
+                    f"space-separated:\n\n"
                     f"`register <wallet> ethereum bsc polygon`"
                 )
                 await ctx.send(sender, create_text_chat(chains_msg))
@@ -587,10 +589,10 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
                     status_msg = (
                         f"📊 **Portfolio Status**\n\n"
-                        f"{emoji} **Risk Level:** {latest['risk_level'].upper()}\n\n"
-                        f"**Risk Score:** {latest['risk_score']:.0%}\n\n"
-                        f"**Updated:** {format_timestamp(latest['timestamp'])}\n\n"
-                        f"**Action:** {action}\n\n"
+                        f"**Risk Level:** {latest['risk_level'].upper()} {emoji} \n"
+                        f"**Risk Score:** {latest['risk_score']:.0%}\n"
+                        f"**Updated:** {format_timestamp(latest['timestamp'])}\n"
+                        f"**Action:** {action}\n"
                         f"Type\n\n `history` \n\nfor details."
                     )
 
@@ -620,34 +622,34 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
                     "**Setup:**\n\n"
 
-                    "`register <wallet> <chains>` \n"
+                    "`register <wallet> <chains>` \n\n"
                     "Register portfolio\n\n"
 
                     "**Monitoring:**\n\n"
 
-                    "`status` \n"
+                    "`status` \n\n"
                     "Current risk level\n\n"
 
-                    "`history` \n"
+                    "`history` \n\n"
                     "Recent alerts\n\n"
 
-                    "`portfolio` \n"
+                    "`portfolio` \n\n"
                     "View registered wallet(s)\n\n"
 
-                    "`chains` \n"
+                    "`chains` \n\n"
                     "List supported chains\n\n"
 
-                    "`help` \n"
+                    "`help` \n\n"
                     "Show command message\n\n"
 
                     "**Risk Levels:**\n\n"
-                    "🟢 **Low** (0-30%) - Healthy\n"
-                    "🟡 **Medium** (30-50%) - Monitor\n"
-                    "🟠 **High** (50-70%) - Action needed\n"
+                    "🟢 **Low** (0-30%) - Healthy\n\n"
+                    "🟡 **Medium** (30-50%) - Monitor\n\n"
+                    "🟠 **High** (50-70%) - Action needed\n\n"
                     "🔴 **Critical** (70-100%) - Urgent\n\n"
 
-                    f"**Monitoring:** {len(SUPPORTED_CHAINS)} chains\n"
-                    f"**Frequency:** Every 5 minutes\n"
+                    f"**Monitoring:** {len(SUPPORTED_CHAINS)} chains\n\n"
+                    f"**Frequency:** Every 5 minutes\n\n"
                     f"**AI-Powered:** MeTTa reasoning"
                 )
                 await ctx.send(sender, create_text_chat(help_msg))
