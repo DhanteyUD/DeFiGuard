@@ -25,8 +25,8 @@ Deploy your agents to Agentverse and note their addresses:
 In `test_agent_av.py`, replace the placeholder addresses:
 
 ```python
-RISK_AGENT_ADDRESS = "agent1qwwc3jwx0x6z0sk07029n9ngztsrapcc0ngdwy8swzq50tt7t0nf726tmkm"
-ALERT_AGENT_ADDRESS = "agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f"
+RISK_AGENT_ADDRESS = "agent1q2stpgsyl2h5dlpq7sfk47hfnjqsw84kf6m40defdfph65ftje4e56l5a0f"
+ALERT_AGENT_ADDRESS = "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun"
 ```
 
 ### 3. Deploy to Agentverse
