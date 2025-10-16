@@ -9,7 +9,6 @@ from uagents_core.contrib.protocols.chat import (
 )
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
-from pydantic import UUID4
 from typing import List, Dict
 from web3 import Web3
 import re
@@ -53,7 +52,7 @@ alert_agent = Agent(
 print(f"Alert Agent Address: {alert_agent.address}")
 
 # Portfolio Monitor Agent address
-PORTFOLIO_AGENT_ADDRESS = "agent1qt2fhu92p6uq3yq692drxrnx74yh7jqs0vjm65st3tz6wej6rxf7qehenpc"
+PORTFOLIO_AGENT_ADDRESS = "agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn"
 
 chat_proto = Protocol(spec=chat_protocol_spec)
 
@@ -348,7 +347,7 @@ def create_text_chat(text: str) -> ChatMessage:
     """Create a ChatMessage with text content"""
     return ChatMessage(
         timestamp=datetime.now(timezone.utc),
-        msg_id=UUID(str(uuid4())),
+        msg_id=str(uuid4()),  # type: ignore[arg-type]
         content=[TextContent(type="text", text=text)]
     )
 
@@ -441,7 +440,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     f"**Commands:**\n\n"
 
                     f"`status` \n"
-                    f"Check curren risk\n\n"
+                    f"Check current risk\n\n"
 
                     f"`history` \n"
                     f"View recent alerts\n\n"
