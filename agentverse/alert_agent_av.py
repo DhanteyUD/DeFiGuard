@@ -531,7 +531,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     f"🔗 **Supported Chains ({len(SUPPORTED_CHAINS)})**\n\n"
                 )
                 for i, (key, name) in enumerate(SUPPORTED_CHAINS.items(), 1):
-                    chains_msg += f"{i}. **{name}** `{key}`\n\n"
+                    chains_msg += f"\n\n{i}. **{name}** `{key}`\n\n"
 
                 chains_msg += (
                     f"\n**Usage:**\n\n"
@@ -561,6 +561,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     portfolio_msg += f"\n**Monitoring {len(chains)} chain(s):**\n\n"
                     portfolio_msg += "\n".join(f"• {name}" for name in chain_names)
                     portfolio_msg += f"\n\n**Registered:** {format_timestamp(registered_at)}\n\n"
+                    portfolio_msg += f"---\n\n"
                     portfolio_msg += f"To update:\n\n`register <new_wallet> <chains>`"
                 else:
                     portfolio_msg = (
@@ -593,6 +594,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         f"**Risk Score:** {latest['risk_score']:.0%}\n\n"
                         f"**Updated:** {format_timestamp(latest['timestamp'])}\n\n"
                         f"**Action:** {action}\n\n"
+                        f"---\n\n"
                         f"Type\n\n `history` \n\nfor details."
                     )
 
@@ -623,7 +625,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     "**Setup:**\n\n"
 
                     "`register <wallet> <chains>` \n\n"
-                    "Register portfolio\n\n"
+                    "⌙ Register portfolio\n\n"
                     
                     "---\n\n"
 
