@@ -432,7 +432,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     f"👋 **Welcome back to DeFiGuard!**\n\n"
                     f"✅ Portfolio registered:\n\n"
 
-                    f"• {wallet_count} wallet(s)\n"
+                    f"• {wallet_count} wallet(s)\n\n"
                     f"• {len(chains)} chain(s): {', '.join(chain_names)}\n\n"
 
                     f"Your portfolio is being monitored 24/7 across all chains.\n\n"
@@ -440,22 +440,22 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     f"**Commands:**\n\n"
 
                     f"`status` \n\n"
-                    f"Check current risk\n\n"
+                    f"⌙ Check current risk\n\n"
 
                     f"`history` \n\n"
-                    f"View recent alerts\n\n"
+                    f"⌙ View recent alerts\n\n"
 
                     f"`portfolio` \n\n"
-                    f"View registered wallet(s)\n\n"
+                    f"⌙ View registered wallet(s)\n\n"
 
                     f"`chains` \n\n"
-                    f"View supported chains\n\n"
+                    f"⌙ View supported chains\n\n"
 
                     f"`register <wallet> <chains>` \n\n"
-                    f"Update portfolio\n\n"
+                    f"⌙ Update portfolio\n\n"
 
                     f"`help` \n\n"
-                    f"Show all commands"
+                    f"⌙ Show all commands"
                 )
             else:
                 welcome_msg = (
@@ -558,7 +558,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     for i, wallet in enumerate(wallets, 1):
                         portfolio_msg += f"{i}. `{wallet[:10]}...{wallet[-8:]}`\n"
 
-                    portfolio_msg += f"\n**Monitoring {len(chains)} chain(s):**\n"
+                    portfolio_msg += f"\n**Monitoring {len(chains)} chain(s):**\n\n"
                     portfolio_msg += "\n".join(f"• {name}" for name in chain_names)
                     portfolio_msg += f"\n\n**Registered:** {format_timestamp(registered_at)}\n\n"
                     portfolio_msg += f"To update:\n\n`register <new_wallet> <chains>`"
@@ -589,10 +589,10 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
                     status_msg = (
                         f"📊 **Portfolio Status**\n\n"
-                        f"**Risk Level:** {latest['risk_level'].upper()} {emoji} \n"
-                        f"**Risk Score:** {latest['risk_score']:.0%}\n"
-                        f"**Updated:** {format_timestamp(latest['timestamp'])}\n"
-                        f"**Action:** {action}\n"
+                        f"**Risk Level:** {latest['risk_level'].upper()} {emoji} \n\n"
+                        f"**Risk Score:** {latest['risk_score']:.0%}\n\n"
+                        f"**Updated:** {format_timestamp(latest['timestamp'])}\n\n"
+                        f"**Action:** {action}\n\n"
                         f"Type\n\n `history` \n\nfor details."
                     )
 
@@ -624,23 +624,27 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
                     "`register <wallet> <chains>` \n\n"
                     "Register portfolio\n\n"
+                    
+                    "---\n\n"
 
                     "**Monitoring:**\n\n"
 
                     "`status` \n\n"
-                    "Current risk level\n\n"
+                    "⌙ Current risk level\n\n"
 
                     "`history` \n\n"
-                    "Recent alerts\n\n"
+                    "⌙ Recent alerts\n\n"
 
                     "`portfolio` \n\n"
-                    "View registered wallet(s)\n\n"
+                    "⌙ View registered wallet(s)\n\n"
 
                     "`chains` \n\n"
-                    "List supported chains\n\n"
+                    "⌙ List supported chains\n\n"
 
                     "`help` \n\n"
-                    "Show command message\n\n"
+                    "⌙ Show command message\n\n"
+                    
+                    "---\n\n"
 
                     "**Risk Levels:**\n\n"
                     "🟢 **Low** (0-30%) - Healthy\n\n"
