@@ -192,17 +192,17 @@ Forwards to Portfolio Monitor Agent (`agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwj
 Sends to user via ASI:One chat (ChatMessage format):
 
 ```
-🟠 **DeFiGuard Alert** 🟠
+🟠 DeFiGuard Alert 🟠
 
-**Risk Level:** HIGH
-**Risk Score:** 75.00%
-**Time:** 2025-10-16 10:35
+Risk Level: HIGH
+Risk Score: 75.00%
+Time: 2025-10-16 10:35
 
-**⚠️ Concerns:**
+⚠️ Concerns:
 1. ETH represents 70% of portfolio
 2. High volatility in 3 assets
 
-**💡 Recommendations:**
+💡 Recommendations:
 1. Diversify immediately
 2. Set stop-loss orders
 3. Review within 24 hours
@@ -366,22 +366,21 @@ Risk levels with emojis and action recommendations:
 ### Message Structure
 
 **Alert Message Format:**
+
 ```
-**DeFiGuard Alert**
+{emoji} DeFiGuard Alert {emoji}
 
-**Risk Level:** {UPPERCASE}
-**Risk Score:** {percentage}%
-**Time:** {timestamp[:16]}
+Risk Level: {UPPERCASE}
+Risk Score: {percentage}%
+Time: {timestamp[:16]}
 
-**⚠️ Concerns:**
+⚠️ Concerns:
 1. {concern_1}
 2. {concern_2}
-...
 
-**💡 Recommendations:**
+💡 Recommendations:
 1. {recommendation_1}
 2. {recommendation_2}
-...
 ```
 
 **Timestamp Formatting:**
@@ -445,12 +444,12 @@ register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum bsc polygon arbitrum
 
 **Agent Response:**
 ```
-✅ **Portfolio Registered!**
+✅ Portfolio Registered!
 
-**Wallet:** 
+Wallet: 
 `0x742d35Cc...5f0bEb`
 
-**Monitoring 3 chain(s):**
+Monitoring 3 chain(s):
 • Ethereum
 • BNB Smart Chain
 • Polygon
@@ -459,11 +458,7 @@ register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum bsc polygon arbitrum
 
 You'll receive alerts automatically when risks are detected.
 
-Type
-
- `status` 
-
-to check current risk level.
+Type `status` to check current risk level.
 ```
 
 ### Step 3: Automatic Monitoring
@@ -479,21 +474,14 @@ The agent automatically:
 ```
 User: status
 
-Agent: 📊 **Portfolio Status**
+Agent: 📊 Portfolio Status
 
-🟢 **Risk Level:** LOW
+🟢 Risk Level: LOW
+Risk Score: 25%
+Updated: Oct 16, 2025 10:30 AM
+Action: Continue monitoring
 
-**Risk Score:** 25%
-
-**Updated:** Oct 16, 2025 10:30 AM
-
-**Action:** Continue monitoring
-
-Type
-
- `history` 
-
-for details.
+Type `history` for details.
 ```
 
 ### Step 5: View History
@@ -501,7 +489,7 @@ for details.
 ```
 User: history
 
-Agent: 📜 **Recent Alerts (Last 5)**
+Agent: 📜 Recent Alerts (Last 5)
 
 1. 🟢 LOW (25%) - 2025-10-16 10:30
 2. 🟡 MEDIUM (42%) - 2025-10-15 15:20
@@ -515,22 +503,22 @@ Agent: 📜 **Recent Alerts (Last 5)**
 ```
 User: chains
 
-Agent: 🔗 **Supported Chains (12)**
+Agent: 🔗 Supported Chains (12)
 
-1. **Ethereum** (`ethereum`)
-2. **BNB Smart Chain** (`bsc`)
-3. **Polygon** (`polygon`)
-4. **Arbitrum** (`arbitrum`)
-5. **Optimism** (`optimism`)
-6. **Avalanche** (`avalanche`)
-7. **Base** (`base`)
-8. **Fantom** (`fantom`)
-9. **Gnosis Chain** (`gnosis`)
-10. **Moonbeam** (`moonbeam`)
-11. **Celo** (`celo`)
-12. **Cronos** (`cronos`)
+1. Ethereum (`ethereum`)
+2. BNB Smart Chain (`bsc`)
+3. Polygon (`polygon`)
+4. Arbitrum (`arbitrum`)
+5. Optimism (`optimism`)
+6. Avalanche (`avalanche`)
+7. Base (`base`)
+8. Fantom (`fantom`)
+9. Gnosis Chain (`gnosis`)
+10. Moonbeam (`moonbeam`)
+11. Celo (`celo`)
+12. Cronos (`cronos`)
 
-**Usage:**
+Usage:
 
 `register <wallet> ethereum,bsc,polygon`
 
@@ -548,40 +536,32 @@ Or space-separated:
 ```
 User: [Opens Chat - StartSessionContent]
 
-Agent: 👋 **Welcome to DeFiGuard!**
+Agent: 👋 Welcome to DeFiGuard!
 
 Multi-chain portfolio risk monitoring with AI.
 
-**Get Started:**
+Get Started:
 
 `register <wallet_address> <chains>`
 
-**Example:**
+Example:
 `register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon,arbitrum`
 
-**Supported:**
+Supported:
 12 chains including Ethereum, BSC, Polygon, Arbitrum, Optimism, Avalanche, Base & more!
 
-Type
+Type `chains` to see all supported chains.
 
- `chains` 
-
-to see all supported chains.
-
-Type
-
- `help` 
-
-for more commands.
+Type `help` for more commands.
 
 User: register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon
 
-Agent: ✅ **Portfolio Registered!**
+Agent: ✅ Portfolio Registered!
 
-**Wallet:** 
+Wallet: 
 `0x742d35Cc...5f0bEb`
 
-**Monitoring 2 chain(s):**
+Monitoring 2 chain(s):
 • Ethereum
 • Polygon
 
@@ -589,13 +569,7 @@ Agent: ✅ **Portfolio Registered!**
 
 You'll receive alerts automatically when risks are detected.
 
-Type
-
- `status` 
-
-to check current risk level.
-
-User: Thanks!
+Type `status`to check current risk level.
 ```
 
 ### Scenario 2: Returning User
@@ -603,7 +577,7 @@ User: Thanks!
 ```
 User: [Opens Chat - StartSessionContent]
 
-Agent: 👋 **Welcome back to DeFiGuard!**
+Agent: 👋 Welcome back to DeFiGuard!
 
 ✅ Portfolio registered:
 • 1 wallet(s)
@@ -611,43 +585,31 @@ Agent: 👋 **Welcome back to DeFiGuard!**
 
 Your portfolio is being monitored 24/7 across all chains.
 
-**Commands:**
+Commands:
 
-`status` 
-Check current risk
+`status` - Check current risk
 
-`history` 
-View recent alerts
+`history` - View recent alerts
 
-`portfolio` 
-View registered wallet(s)
+`portfolio` - View registered wallet(s)
 
-`chains` 
-View supported chains
+`chains` - View supported chains
 
-`register <wallet> <chains>` 
-Update portfolio
+`register <wallet> <chains>` - Update portfolio
 
-`help` 
-Show all commands
+`help` - Show all commands
 
 User: status
 
-Agent: 📊 **Portfolio Status**
+Agent: 📊 Portfolio Status
 
-🟡 **Risk Level:** MEDIUM
+🟡 Risk Level: MEDIUM
 
-**Risk Score:** 45%
+Risk Score: 45%
+Updated: Oct 16, 2025 09:45 AM
+Action: Review within week
 
-**Updated:** Oct 16, 2025 09:45 AM
-
-**Action:** Review within week
-
-Type
-
- `history` 
-
-for details.
+Type `history` for details.
 ```
 
 ### Scenario 3: Registration Error Handling
@@ -663,18 +625,18 @@ Agent: ❌ Invalid chain(s):
 
 • Unsupported chain: 'bitcoin'
 
-**Supported chains:**
+Supported chains:
 
 ethereum, bsc, polygon, arbitrum, optimism, avalanche, base, fantom, gnosis, moonbeam, celo, cronos
 
 User: register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum polygon
 
-Agent: ✅ **Portfolio Registered!**
+Agent: ✅ Portfolio Registered!
 
-**Wallet:** 
+Wallet: 
 `0x742d35Cc...5f0bEb`
 
-**Monitoring 2 chain(s):**
+Monitoring 2 chain(s):
 • Ethereum
 • Polygon
 
@@ -682,11 +644,7 @@ Agent: ✅ **Portfolio Registered!**
 
 You'll receive alerts automatically when risks are detected.
 
-Type
-
- `status` 
-
-to check current risk level.
+Type `status` to check current risk level.
 ```
 
 ### Scenario 4: View Portfolio
@@ -694,16 +652,16 @@ to check current risk level.
 ```
 User: portfolio
 
-Agent: 📋 **Your Portfolio**
+Agent: 📋 Your Portfolio
 
-**Wallet(s):**
+Wallet(s):
 1. `0x742d35Cc...5f0bEb`
 
-**Monitoring 2 chain(s):**
+Monitoring 2 chain(s):
 • Ethereum
 • Polygon
 
-**Registered:** Oct 15, 2025 02:30 PM
+Registered: Oct 15, 2025 02:30 PM
 
 To update:
 
@@ -715,18 +673,18 @@ To update:
 ```
 [Risk Analysis Agent detects high risk and sends AlertNotification]
 
-Agent: 🟠 **DeFiGuard Alert** 🟠
+Agent: 🟠 DeFiGuard Alert 🟠
 
-**Risk Level:** HIGH
-**Risk Score:** 75.00%
-**Time:** 2025-10-16 10:35
+Risk Level: HIGH
+Risk Score: 75.00%
+Time: 2025-10-16 10:35
 
-**⚠️ Concerns:**
+⚠️ Concerns:
 1. ETH represents 70% of portfolio
 2. High volatility: 15.5% in 24h
 3. Low chain diversification
 
-**💡 Recommendations:**
+💡 Recommendations:
 1. Diversify portfolio across chains
 2. Set stop-loss orders for volatile assets
 3. Rebalance within 24 hours
@@ -737,21 +695,14 @@ Agent: [No automatic response to non-command text]
 
 User: status
 
-Agent: 📊 **Portfolio Status**
+Agent: 📊 Portfolio Status
 
-🟠 **Risk Level:** HIGH
+🟠 Risk Level: HIGH
+Risk Score: 75%
+Updated: Oct 16, 2025 10:35 AM
+Action: Rebalance within 24h
 
-**Risk Score:** 75%
-
-**Updated:** Oct 16, 2025 10:35 AM
-
-**Action:** Rebalance within 24h
-
-Type
-
- `history` 
-
-for details.
+Type `history` for details.
 ```
 
 ### Scenario 6: Help Command
@@ -759,14 +710,14 @@ for details.
 ```
 User: help
 
-Agent: 🆘 **DeFiGuard Commands**
+Agent: 🆘 DeFiGuard Commands
 
-**Setup:**
+Setup:
 
 `register <wallet> <chains>` 
 Register portfolio
 
-**Monitoring:**
+Monitoring:
 
 `status` 
 Current risk level
@@ -783,16 +734,16 @@ List supported chains
 `help` 
 Show command message
 
-**Risk Levels:**
+Risk Levels:
 
-🟢 **Low** (0-30%) - Healthy
-🟡 **Medium** (30-50%) - Monitor
-🟠 **High** (50-70%) - Action needed
-🔴 **Critical** (70-100%) - Urgent
+🟢 Low (0-30%) - Healthy
+🟡 Medium (30-50%) - Monitor
+🟠 High (50-70%) - Action needed
+🔴 Critical (70-100%) - Urgent
 
-**Monitoring:** 12 chains
-**Frequency:** Every 5 minutes
-**AI-Powered:** MeTTa reasoning
+Monitoring: 12 chains
+Frequency: Every 5 minutes
+AI-Powered: MeTTa reasoning
 ```
 
 ---
@@ -839,7 +790,7 @@ Show command message
 
 • Unsupported chain: 'bitcoin'
 
-**Supported chains:**
+Supported chains:
 
 ethereum, bsc, polygon, arbitrum, optimism, avalanche, base, fantom, gnosis, moonbeam, celo, cronos
 ```
@@ -850,7 +801,7 @@ ethereum, bsc, polygon, arbitrum, optimism, avalanche, base, fantom, gnosis, moo
 
 • Unsupported chain: 'eth'. Did you mean: ethereum?
 
-**Supported chains:**
+Supported chains:
 
 ethereum, bsc, polygon, arbitrum, optimism, avalanche, base, fantom, gnosis, moonbeam, celo, cronos
 ```
