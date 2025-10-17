@@ -72,7 +72,7 @@ fund_agent_if_low(str(alert_agent.wallet.address()))
 
 print(f"Alert Agent Address: {alert_agent.address}")
 
-PORTFOLIO_AGENT_ADDRESS = os.getenv("PORTFOLIO_AGENT_ADDRESS", "portfolio_agent_address")
+PORTFOLIO_AGENT_ADDRESS = os.getenv("PORTFOLIO_AGENT_ADDRESS")
 
 chat_proto = Protocol(spec=chat_protocol_spec)
 
