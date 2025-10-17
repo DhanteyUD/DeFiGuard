@@ -11,6 +11,11 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from typing import List, Dict
 from web3 import Web3
+from openai import OpenAI, APIError, APIConnectionError, RateLimitError, BadRequestError
+from openai.types.chat import (
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+)
 import re
 
 
@@ -43,17 +48,19 @@ class ChatAckWrapper(Model):
     timestamp: str
 
 
-alert_agent = Agent(
+client = OpenAI(
+    base_url='https://api.asi1.ai/v1',
+    api_key='sk_0265d6572c764f83b73ee0858f70890add3aa6d0f7314de2bebd42b2ca162038',
+)
+
+alert_agent_av = Agent(
     name="alert_agent",
-    seed="stFHP3IHIBU2gmKajczfsTqlykC0fZ0lVXTbdHq_-2g",
-    port=8002,
     mailbox=True,
     publish_agent_details=True
 )
 
-print(f"Alert Agent Address: {alert_agent.address}")
+print(f"Alert Agent Address: {alert_agent_av.address}")
 
-# Portfolio Monitor Agent address
 PORTFOLIO_AGENT_ADDRESS = "agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn"
 
 chat_proto = Protocol(spec=chat_protocol_spec)
@@ -72,6 +79,8 @@ SUPPORTED_CHAINS = {
     "celo": "Celo",
     "cronos": "Cronos"
 }
+
+DIRECT_COMMANDS = ["register", "chains", "portfolio", "status", "history", "help"]
 
 
 def add_alert_key(ctx: Context, key: str):
@@ -248,11 +257,9 @@ def parse_register_command(text: str) -> Dict:
 
     chains_input = " ".join(parts[2:])
 
-    # comma-separated
     if "," in chains_input:
         chains = [c.strip().lower() for c in chains_input.split(",")]
     else:
-        # Space-separated
         chains = [c.strip().lower() for c in parts[2:]]
 
     chains = list(dict.fromkeys(chains))
@@ -372,7 +379,122 @@ def get_default_risk_status() -> Dict:
     }
 
 
-@alert_agent.on_message(model=AlertNotification)
+def build_context_for_ai(ctx: Context, sender: str) -> str:
+    portfolio = get_user_portfolio(ctx, sender)
+    all_alerts = get_all_alerts(ctx)
+    user_alerts = [a for a in all_alerts.values() if a.get("user_id") == sender]
+
+    context = "USER PORTFOLIO DATA:\n"
+
+    if portfolio:
+        wallets = portfolio.get("wallets", [])
+        chains = portfolio.get("chains", [])
+        chain_names = [SUPPORTED_CHAINS.get(c, c) for c in chains]
+
+        context += f"- Registered: {len(wallets)} wallet(s)\n\n"
+        context += f"- Monitored chains: {', '.join(chain_names)}\n\n"
+        context += f"- Registration date: {portfolio.get('registered_at', 'Unknown')}\n\n"
+    else:
+        context += "- No portfolio registered yet\n\n"
+
+    context += "\nRISK STATUS:\n\n"
+    if user_alerts:
+        latest = user_alerts[-1]
+        context += f"- Current risk level: {latest['risk_level'].upper()}\n\n"
+        context += f"- Risk score: {latest['risk_score']:.0%}\n\n"
+        context += f"- Last updated: {latest['timestamp']}\n\n"
+
+        if latest.get('concerns'):
+            context += f"- Active concerns: {', '.join(latest['concerns'][:3])}\n\n"
+
+        context += f"\n- Total alerts received: {len(user_alerts)}\n\n"
+
+        recent_alerts = user_alerts[-3:]
+        context += "- Recent risk levels: "
+        context += ", ".join([f"{a['risk_level']} ({a['risk_score']:.0%})" for a in recent_alerts])
+        context += "\n\n"
+    else:
+        context += "- No alerts yet (portfolio is healthy)\n\n"
+
+    return context
+
+
+async def query_asi1_model(ctx: Context, sender: str, user_question: str) -> str:
+    try:
+        user_context = build_context_for_ai(ctx, sender)
+
+        system_prompt = f"""You are DeFiGuard AI, an intelligent assistant for a multi-chain DeFi portfolio risk monitoring system.
+
+Your role is to help users understand their portfolio risks, explain alerts, and provide actionable advice about DeFi security.
+
+CAPABILITIES:
+- Explain portfolio risk levels and what they mean
+- Provide context about DeFi risks (smart contract risk, liquidity risk, market volatility, etc.)
+- Help users understand alerts and recommendations
+- Suggest risk mitigation strategies
+- Answer questions about supported chains and features
+
+SUPPORTED CHAINS: {', '.join(SUPPORTED_CHAINS.values())}
+
+RISK LEVELS:
+- 🟢 LOW (0-30%): Portfolio is healthy, continue monitoring
+- 🟡 MEDIUM (30-50%): Some concerns, review within a week
+- 🟠 HIGH (50-70%): Action needed, rebalance within 24 hours
+- 🔴 CRITICAL (70-100%): Urgent action required, review immediately
+
+CURRENT USER DATA:
+{user_context}
+
+IMPORTANT GUIDELINES:
+- Be concise and helpful
+- Use the user's actual portfolio data when available
+- If the user asks about commands, guide them to use: status, history, portfolio, chains, register, help
+- Always maintain a professional but friendly tone
+- If you don't have specific information, be honest about limitations
+- Focus on actionable insights
+- Never make specific investment recommendations or financial advice
+- Explain technical concepts in simple terms
+
+If the user asks how to use the system, mention these commands:
+- `status` - Check current risk level
+- `history` - View recent alerts
+- `portfolio` - View registered wallet(s)
+- `chains` - List supported chains
+- `register <wallet> <chains>` - Register/update portfolio
+- `help` - Show all commands
+"""
+
+        messages: list[
+            ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam
+            ] = [
+            ChatCompletionSystemMessageParam(role="system", content=system_prompt),
+            ChatCompletionUserMessageParam(role="user", content=user_question),
+        ]
+
+        response = client.chat.completions.create(
+            model="asi1-mini",
+            messages=messages,
+            max_tokens=2048,
+        )
+
+        return str(response.choices[0].message.content)
+
+
+    except (APIError, APIConnectionError, RateLimitError, BadRequestError) as e:
+        ctx.logger.exception(f"Error querying ASI-1 model: {e}")
+        return (
+            "I apologize, but I'm having trouble processing your question right now. "
+            "Please try again, or use one of these commands:\n\n"
+            "`status` `history` `portfolio` `chains` `help`"
+        )
+
+
+def is_direct_command(text: str) -> bool:
+    command = text.strip().lower().split()[0] if text.strip() else ""
+    return command in DIRECT_COMMANDS
+
+
+@alert_agent_av.on_message(model=AlertNotification)
 async def handle_alert(ctx: Context, sender: str, msg: AlertNotification):
     """Handle incoming alert from Risk Analysis Agent"""
     ctx.logger.info(
@@ -413,9 +535,9 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
     await ctx.send(
         sender,
-        ChatAckWrapper(
-            acknowledged_msg_id=str(msg.msg_id),
-            timestamp=datetime.now(timezone.utc).isoformat()
+        ChatAcknowledgement(
+            timestamp=datetime.now(timezone.utc),
+            acknowledged_msg_id=msg.msg_id
         )
     )
 
@@ -431,52 +553,31 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 chain_names = [SUPPORTED_CHAINS.get(c, c) for c in chains]
 
                 welcome_msg = (
-                    f"👋 **Welcome back to DeFiGuard!**\n\n"
+                    f"👋 **Welcome back to DeFiGuard AI!**\n\n"
                     f"✅ Portfolio registered:\n\n"
-
                     f"• {wallet_count} wallet(s)\n\n"
                     f"• {len(chains)} chain(s): {', '.join(chain_names)}\n\n"
-
-                    f"Your portfolio is being monitored 24/7 across all chains.\n\n"
-
-                    f"**Commands:**\n\n"
-
-                    f"`status` \n\n"
-                    f"⌙ Check current risk\n\n"
-
-                    f"`history` \n\n"
-                    f"⌙ View recent alerts\n\n"
-
-                    f"`portfolio` \n\n"
-                    f"⌙ View registered wallet(s)\n\n"
-
-                    f"`chains` \n\n"
-                    f"⌙ View supported chains\n\n"
-
-                    f"`register <wallet> <chains>` \n\n"
-                    f"⌙ Update portfolio\n\n"
-
-                    f"`help` \n\n"
-                    f"⌙ Show all commands"
+                    f"Your portfolio is being monitored 24/7 with AI-powered risk analysis.\n\n"
+                    f"**Ask me anything:**\n\n"
+                    f"💬 \"What's my current risk?\"\n\n"
+                    f"💬 \"Explain my latest alert\"\n\n"
+                    f"💬 \"How can I reduce my risk?\"\n\n"
+                    f"**Or use commands:**\n\n"
+                    f"`status`\n\n `history`\n\n `portfolio`\n\n `chains`\n\n `help`"
                 )
             else:
                 welcome_msg = (
-                    "👋 **Welcome to DeFiGuard!**\n\n"
-
-                    "Multi-chain portfolio risk monitoring with AI.\n\n"
-
+                    "👋 **Welcome to DeFiGuard AI!**\n\n"
+                    "Multi-chain portfolio risk monitoring with AI-powered insights.\n\n"
                     "**Get Started:**\n\n"
-
                     "`register <wallet_address> <chains>`\n\n"
-
                     "**Example:**\n\n"
                     "`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon,arbitrum`\n\n"
-
-                    "**Supported:**\n\n"
-                    f"{len(SUPPORTED_CHAINS)} chains including Ethereum, BSC, Polygon, Arbitrum, Optimism & more!\n\n"
-
-                    "Type\n\n `chains` \n\nto see all supported chains.\n\n"
-                    "Type\n\n `help` \n\nfor more commands."
+                    "**Ask me anything:**\n\n"
+                    "💬 \"What chains do you support?\"\n\n"
+                    "💬 \"What risks do you monitor?\"\n\n"
+                    "💬 \"How does the risk scoring work?\"\n\n"
+                    f"**Monitoring:** {len(SUPPORTED_CHAINS)} chains with ASI-1 AI"
                 )
 
             response = create_text_chat(welcome_msg)
@@ -485,189 +586,188 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
         elif isinstance(item, TextContent):
             ctx.logger.info(f"📝 Text message: {item.text}")
 
-            command = item.text.strip().lower()
-            all_alerts = get_all_alerts(ctx)
-            user_alerts = [
-                a for a in all_alerts.values() if a.get("user_id") == sender
-            ]
+            user_input = item.text.strip()
 
-            # Handle portfolio registration
-            if command.startswith("register "):
-                parse_result = parse_register_command(item.text)
+            if is_direct_command(user_input):
+                command = user_input.lower()
+                all_alerts = get_all_alerts(ctx)
+                user_alerts = [
+                    a for a in all_alerts.values() if a.get("user_id") == sender
+                ]
 
-                if not parse_result["valid"]:
-                    error_msg = parse_result['error']
-                    await ctx.send(sender, create_text_chat(error_msg))
-                else:
-                    wallet = parse_result["wallet"]
-                    chains = parse_result["chains"]
+                if command.startswith("register "):
+                    parse_result = parse_register_command(user_input)
 
-                    # Save locally
-                    save_user_portfolio(ctx, sender, [wallet], chains)
-
-                    # Send to Portfolio Monitor Agent
-                    portfolio_msg = Portfolio(
-                        user_id=sender,
-                        wallets=[wallet],
-                        chains=chains,
-                        timestamp=datetime.now(timezone.utc).isoformat()
-                    )
-
-                    await ctx.send(PORTFOLIO_AGENT_ADDRESS, portfolio_msg)
-
-                    chain_names = [SUPPORTED_CHAINS[c] for c in chains]
-                    success_msg = (
-                            f"✅ **Portfolio Registered!**\n\n"
-                            f"**Wallet:** \n\n`{wallet[:10]}...{wallet[-8:]}`\n\n"
-                            f"**Monitoring {len(chains)} chain(s):**\n\n" +
-                            "\n".join(f"• {name}" for name in chain_names) +
-                            f"\n\n🛡️ Your portfolio is now protected 24/7\n\n"
-                            f"You'll receive alerts automatically when risks are detected.\n\n"
-                            f"Type\n\n `status` \n\nto check current risk level."
-                    )
-                    await ctx.send(sender, create_text_chat(success_msg))
-                    ctx.logger.info(f"✅ Portfolio registered for {sender}")
-
-            elif command == "chains":
-                chains_msg = (
-                    f"🔗 **Supported Chains ({len(SUPPORTED_CHAINS)})**\n\n"
-                )
-                for i, (key, name) in enumerate(SUPPORTED_CHAINS.items(), 1):
-                    chains_msg += f"\n\n{i}. **{name}** `{key}`\n\n"
-
-                chains_msg += (
-                    f"\n**Usage:**\n\n"
-                    f"comma-separated:\n\n"
-                    f"`register <wallet> ethereum,bsc,polygon`\n\n"
-                    f"Or\n\n"
-                    f"space-separated:\n\n"
-                    f"`register <wallet> ethereum bsc polygon`"
-                )
-                await ctx.send(sender, create_text_chat(chains_msg))
-
-            elif command == "portfolio":
-                portfolio = get_user_portfolio(ctx, sender)
-                if portfolio:
-                    wallets = portfolio.get("wallets", [])
-                    chains = portfolio.get("chains", [])
-                    chain_names = [SUPPORTED_CHAINS.get(c, c) for c in chains]
-                    registered_at = portfolio.get("registered_at", "Unknown")
-
-                    portfolio_msg = (
-                        f"📋 **Your Portfolio**\n\n"
-                        f"**Wallet(s):**\n"
-                    )
-                    for i, wallet in enumerate(wallets, 1):
-                        portfolio_msg += f"{i}. `{wallet[:10]}...{wallet[-8:]}`\n"
-
-                    portfolio_msg += f"\n**Monitoring {len(chains)} chain(s):**\n\n"
-                    portfolio_msg += "\n".join(f"• {name}" for name in chain_names)
-                    portfolio_msg += f"\n\n**Registered:** {format_timestamp(registered_at)}\n\n"
-                    portfolio_msg += f"---\n\n"
-                    portfolio_msg += f"To update:\n\n`register <new_wallet> <chains>`"
-                else:
-                    portfolio_msg = (
-                        "❌ No portfolio registered.\n\n"
-                        "Use:\n\n`register <wallet_address> <chains>`\n\n"
-                        "Example:\n\n`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon`"
-                    )
-
-                await ctx.send(sender, create_text_chat(portfolio_msg))
-
-            elif command == "status":
-                portfolio = get_user_portfolio(ctx, sender)
-                if not portfolio:
-                    status_msg = (
-                        "❌ No portfolio registered.\n\n"
-                        "Register first:\n\n`register <wallet_address> <chains>`"
-                    )
-                else:
-                    if user_alerts:
-                        latest = user_alerts[-1]
+                    if not parse_result["valid"]:
+                        error_msg = parse_result['error']
+                        await ctx.send(sender, create_text_chat(error_msg))
                     else:
-                        latest = get_default_risk_status()
+                        wallet = parse_result["wallet"]
+                        chains = parse_result["chains"]
 
-                    emoji = get_risk_level_emoji(latest['risk_level'])
-                    action = get_risk_action(latest['risk_level'])
+                        save_user_portfolio(ctx, sender, [wallet], chains)
 
-                    status_msg = (
-                        f"📊 **Portfolio Status**\n\n"
-                        f"**Risk Level:** {latest['risk_level'].upper()} {emoji} \n\n"
-                        f"**Risk Score:** {latest['risk_score']:.0%}\n\n"
-                        f"**Updated:** {format_timestamp(latest['timestamp'])}\n\n"
-                        f"**Action:** {action}\n\n"
-                        f"---\n\n"
-                        f"Type\n\n `history` \n\nfor details."
-                    )
-
-                await ctx.send(sender, create_text_chat(status_msg))
-
-            elif command == "history":
-                user_alerts_list = user_alerts[-5:]
-                if user_alerts_list:
-                    history_msg = "📜 **Recent Alerts (Last 5)**\n\n"
-                    for i, alert in enumerate(reversed(user_alerts_list), 1):
-                        emoji = get_risk_level_emoji(alert['risk_level'])
-                        timestamp_str = alert['timestamp'][:16].replace('T', ' ')
-                        history_msg += (
-                            f"{i}. {emoji} {alert['risk_level'].upper()} "
-                            f"({alert['risk_score']:.0%}) - "
-                            f"{timestamp_str}\n"
+                        portfolio_msg = Portfolio(
+                            user_id=sender,
+                            wallets=[wallet],
+                            chains=chains,
+                            timestamp=datetime.now(timezone.utc).isoformat()
                         )
-                    history_msg += f"\n{len(user_alerts)} total alerts stored."
+
+                        await ctx.send(PORTFOLIO_AGENT_ADDRESS, portfolio_msg)
+
+                        chain_names = [SUPPORTED_CHAINS[c] for c in chains]
+                        success_msg = (
+                                f"✅ **Portfolio Registered!**\n\n"
+                                f"**Wallet:** \n\n`{wallet[:10]}...{wallet[-8:]}`\n\n"
+                                f"**Monitoring {len(chains)} chain(s):**\n\n" +
+                                "\n".join(f"• {name}" for name in chain_names) +
+                                f"\n\n🛡️ AI-powered protection activated!\n\n"
+                                f"💬 Ask me: \"What should I know about my risk?\"\n\n"
+                                f"Or use\n\n `status` `history` `help`"
+                        )
+                        await ctx.send(sender, create_text_chat(success_msg))
+                        ctx.logger.info(f"✅ Portfolio registered for {sender}")
+
+                elif command == "chains":
+                    chains_msg = (
+                        f"🔗 **Supported Chains ({len(SUPPORTED_CHAINS)})**\n\n"
+                    )
+                    for i, (key, name) in enumerate(SUPPORTED_CHAINS.items(), 1):
+                        chains_msg += f"\n\n{i}. **{name}** \n\n`{key}`\n\n"
+
+                    chains_msg += (
+                        f"\n\n---\n\n"
+                        f"**Usage:**\n\n"
+                        f"`register <wallet> ethereum,bsc,polygon`\n\n"
+                        f"\n💬 **Ask me:** \"Which chain is best for low fees?"
+                    )
+                    await ctx.send(sender, create_text_chat(chains_msg))
+
+                elif command == "portfolio":
+                    portfolio = get_user_portfolio(ctx, sender)
+                    if portfolio:
+                        wallets = portfolio.get("wallets", [])
+                        chains = portfolio.get("chains", [])
+                        chain_names = [SUPPORTED_CHAINS.get(c, c) for c in chains]
+                        registered_at = portfolio.get("registered_at", "Unknown")
+
+                        portfolio_msg = (
+                            f"📋 **Your Portfolio**\n\n"
+                            f"**Wallet(s):**\n"
+                        )
+                        for i, wallet in enumerate(wallets, 1):
+                            portfolio_msg += f"{i}. `{wallet[:10]}...{wallet[-8:]}`\n\n"
+
+                        portfolio_msg += f"\n**Monitoring {len(chains)} chain(s):**\n\n"
+                        portfolio_msg += "\n".join(f"• {name}" for name in chain_names)
+                        portfolio_msg += f"\n\n**Registered:** {format_timestamp(registered_at)}\n\n"
+                        portfolio_msg += f"💬 Ask me: \"How's my portfolio looking?\""
+                    else:
+                        portfolio_msg = (
+                            "❌ No portfolio registered.\n\n"
+                            "Use:\n\n`register <wallet_address> <chains>`\n\n"
+                            "💬 Or ask: \"How do I get started?\""
+                        )
+
+                    await ctx.send(sender, create_text_chat(portfolio_msg))
+
+                elif command == "status":
+                    portfolio = get_user_portfolio(ctx, sender)
+                    if not portfolio:
+                        status_msg = (
+                            "❌ No portfolio registered.\n\n"
+                            "Register first:\n\n`register <wallet_address> <chains>`"
+                        )
+                    else:
+                        if user_alerts:
+                            latest = user_alerts[-1]
+                        else:
+                            latest = get_default_risk_status()
+
+                        emoji = get_risk_level_emoji(latest['risk_level'])
+                        action = get_risk_action(latest['risk_level'])
+
+                        status_msg = (
+                            f"📊 **Portfolio Status**\n\n"
+                            f"**Risk Level:**  {emoji} {latest['risk_level'].upper()} \n\n"
+                            f"**Risk Score:** {latest['risk_score']:.0%}\n\n"
+                            f"**Updated:** {format_timestamp(latest['timestamp'])}\n\n"
+                            f"**Action:** {action}\n\n"
+                            f"💬 Ask me: \"What does this risk level mean?\""
+                        )
+
+                    await ctx.send(sender, create_text_chat(status_msg))
+
+                elif command == "history":
+                    user_alerts_list = user_alerts[-5:]
+                    if user_alerts_list:
+                        history_msg = "📜 **Recent Alerts (Last 5)**\n\n"
+                        for i, alert in enumerate(reversed(user_alerts_list), 1):
+                            emoji = get_risk_level_emoji(alert['risk_level'])
+                            timestamp_str = alert['timestamp'][:16].replace('T', ' ')
+                            history_msg += (
+                                f"{i}. {emoji} {alert['risk_level'].upper()} "
+                                f"({alert['risk_score']:.0%}) - "
+                                f"{timestamp_str}\n"
+                            )
+                        history_msg += f"\n{len(user_alerts)} total alerts stored.\n\n"
+                        history_msg += f"💬 Ask me: \"Why did my risk increase?\""
+                    else:
+                        history_msg = "📜 **Alert History**\n\nNo alerts yet. This is good! 🎉"
+
+                    await ctx.send(sender, create_text_chat(history_msg))
+
+                elif command == "help":
+                    help_msg = (
+                        "🆘 **DeFiGuard AI Commands**\n\n"
+                        "**Setup:**\n\n"
+                        "`register <wallet> <chains>` \n\n"
+                        "⌙ Register portfolio\n\n"
+                        "---\n\n"
+                        "**Monitoring:**\n\n"
+
+                        "`status` \n\n"
+                        "⌙ Current risk level\n\n"
+
+                        "`history` \n\n"
+                        "⌙ Recent alerts\n\n"
+
+                        "`portfolio` \n\n"
+                        "⌙ View registered wallet(s)\n\n"
+
+                        "`chains` \n\n"
+                        "⌙ List supported chains\n\n"
+
+                        "---\n\n"
+
+                        "**💬 Ask Me Anything:**\n\n"
+                        "• \"What's my biggest risk?\"\n\n"
+                        "• \"How can I diversify better?\"\n\n"
+                        "• \"Explain smart contract risk\"\n\n"
+                        "• \"Which chains are safest?\"\n\n"
+
+                        "---\n\n"
+
+                        "**AI-Powered:** ASI-1 model\n\n"
+                        f"**Monitoring:** {len(SUPPORTED_CHAINS)} chains\n\n"
+                        f"**Frequency:** Every 5 minutes"
+                    )
+                    await ctx.send(sender, create_text_chat(help_msg))
+
                 else:
-                    history_msg = "📜 **Alert History**\n\nNo alerts yet. This is good! 🎉"
-
-                await ctx.send(sender, create_text_chat(history_msg))
-
-            elif command == "help":
-                help_msg = (
-                    "🆘 **DeFiGuard Commands**\n\n"
-
-                    "**Setup:**\n\n"
-
-                    "`register <wallet> <chains>` \n\n"
-                    "⌙ Register portfolio\n\n"
-                    
-                    "---\n\n"
-
-                    "**Monitoring:**\n\n"
-
-                    "`status` \n\n"
-                    "⌙ Current risk level\n\n"
-
-                    "`history` \n\n"
-                    "⌙ Recent alerts\n\n"
-
-                    "`portfolio` \n\n"
-                    "⌙ View registered wallet(s)\n\n"
-
-                    "`chains` \n\n"
-                    "⌙ List supported chains\n\n"
-
-                    "`help` \n\n"
-                    "⌙ Show command message\n\n"
-                    
-                    "---\n\n"
-
-                    "**Risk Levels:**\n\n"
-                    "🟢 **Low** (0-30%) - Healthy\n\n"
-                    "🟡 **Medium** (30-50%) - Monitor\n\n"
-                    "🟠 **High** (50-70%) - Action needed\n\n"
-                    "🔴 **Critical** (70-100%) - Urgent\n\n"
-
-                    f"**Monitoring:** {len(SUPPORTED_CHAINS)} chains\n\n"
-                    f"**Frequency:** Every 5 minutes\n\n"
-                    f"**AI-Powered:** MeTTa reasoning"
-                )
-                await ctx.send(sender, create_text_chat(help_msg))
+                    response_msg = (
+                        f"❓ Command '{user_input}' not recognized.\n\n"
+                        "💬 Try asking me naturally:\n\n"
+                        "\"What commands are available?\"\n\n"
+                        "Or type\n\n `help` \n\nfor command list."
+                    )
+                    await ctx.send(sender, create_text_chat(response_msg))
 
             else:
-                response_msg = (
-                    f"❓ Command '{item.text}' not recognized.\n\n"
-                    "Type\n\n `help` \n\nfor available commands."
-                )
-                await ctx.send(sender, create_text_chat(response_msg))
+                ctx.logger.info(f"🤖 Processing with ASI-1: {user_input}")
+                ai_response = await query_asi1_model(ctx, sender, user_input)
+                await ctx.send(sender, create_text_chat(ai_response))
 
         elif isinstance(item, EndSessionContent):
             ctx.logger.info(f"🔴 Chat session ended with {sender}")
@@ -677,23 +777,23 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 @chat_proto.on_message(ChatAcknowledgement)
 async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledgement):
     """Handle message acknowledgements"""
-
     ctx.logger.info(f"✓ Message {msg.acknowledged_msg_id} acknowledged by {sender}")
 
 
-alert_agent.include(chat_proto, publish_manifest=True)
+alert_agent_av.include(chat_proto, publish_manifest=True)
 
 
-@alert_agent.on_event("startup")
+@alert_agent_av.on_event("startup")
 async def startup(ctx: Context):
     all_alerts = get_all_alerts(ctx)
     sessions = get_active_sessions(ctx)
 
     ctx.logger.info("=" * 70)
-    ctx.logger.info("🚨 DeFiGuard Alert Agent Started!")
-    ctx.logger.info(f"📍 Agent Address: {alert_agent.address}")
+    ctx.logger.info("🚨 DeFiGuard AI Alert Agent Started!")
+    ctx.logger.info(f"📍 Agent Address: {alert_agent_av.address}")
     ctx.logger.info("☁️  Running on Agentverse")
     ctx.logger.info("💬 ASI:One Chat Protocol enabled ✓")
+    ctx.logger.info("🤖 ASI-1 AI Integration enabled ✓")
     ctx.logger.info(f"🔗 Portfolio Agent: {PORTFOLIO_AGENT_ADDRESS}")
     ctx.logger.info(f"🔗 Supporting {len(SUPPORTED_CHAINS)} chains")
     ctx.logger.info(f"📊 Stored alerts: {len(all_alerts)}")
@@ -702,4 +802,4 @@ async def startup(ctx: Context):
 
 
 if __name__ == "__main__":
-    alert_agent.run()
+    alert_agent_av.run()
