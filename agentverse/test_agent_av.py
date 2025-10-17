@@ -29,8 +29,8 @@ test_agent = Agent(
 
 print(f"Test Agent Address: {test_agent.address}")
 
-RISK_AGENT_ADDRESS = "agent1qwwc3jwx0x6z0sk07029n9ngztsrapcc0ngdwy8swzq50tt7t0nf726tmkm"
-ALERT_AGENT_ADDRESS = "agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f"
+RISK_AGENT_ADDRESS = "agent1q2stpgsyl2h5dlpq7sfk47hfnjqsw84kf6m40defdfph65ftje4e56l5a0f"
+ALERT_AGENT_ADDRESS = "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun"
 
 
 def create_low_risk_portfolio() -> RiskAnalysisRequest:

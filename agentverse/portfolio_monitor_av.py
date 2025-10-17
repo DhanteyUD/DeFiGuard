@@ -4,6 +4,7 @@ from typing import List, Dict
 from web3 import Web3
 import aiohttp
 import asyncio
+import re
 
 
 class Portfolio(Model):
@@ -11,15 +12,6 @@ class Portfolio(Model):
     wallets: List[str]
     chains: List[str]
     timestamp: str
-
-
-class AssetBalance(Model):
-    token: str
-    balance: float
-    value_usd: float
-    chain: str
-    price: float
-    change_24h: float
 
 
 class PortfolioSnapshot(Model):
@@ -41,111 +33,209 @@ portfolio_agent = Agent(
 
 print(f"Portfolio Monitor Agent Address: {portfolio_agent.address}")
 
+CHAIN_CONFIG = {
+    "ethereum": {
+        "name": "Ethereum",
+        "rpc": "https://eth.llamarpc.com",
+        "native_token": "ethereum",
+        "native_symbol": "ETH",
+        "explorer": "https://etherscan.io"
+    },
+    "bsc": {
+        "name": "BNB Smart Chain",
+        "rpc": "https://bsc-dataseed.binance.org",
+        "native_token": "binancecoin",
+        "native_symbol": "BNB",
+        "explorer": "https://bscscan.com"
+    },
+    "polygon": {
+        "name": "Polygon",
+        "rpc": "https://polygon-rpc.com",
+        "native_token": "matic-network",
+        "native_symbol": "MATIC",
+        "explorer": "https://polygonscan.com"
+    },
+    "arbitrum": {
+        "name": "Arbitrum",
+        "rpc": "https://arb1.arbitrum.io/rpc",
+        "native_token": "ethereum",
+        "native_symbol": "ETH",
+        "explorer": "https://arbiscan.io"
+    },
+    "optimism": {
+        "name": "Optimism",
+        "rpc": "https://mainnet.optimism.io",
+        "native_token": "ethereum",
+        "native_symbol": "ETH",
+        "explorer": "https://optimistic.etherscan.io"
+    },
+    "avalanche": {
+        "name": "Avalanche",
+        "rpc": "https://api.avax.network/ext/bc/C/rpc",
+        "native_token": "avalanche-2",
+        "native_symbol": "AVAX",
+        "explorer": "https://snowtrace.io"
+    },
+    "base": {
+        "name": "Base",
+        "rpc": "https://mainnet.base.org",
+        "native_token": "ethereum",
+        "native_symbol": "ETH",
+        "explorer": "https://basescan.org"
+    },
+    "fantom": {
+        "name": "Fantom",
+        "rpc": "https://rpc.ftm.tools",
+        "native_token": "fantom",
+        "native_symbol": "FTM",
+        "explorer": "https://ftmscan.com"
+    },
+    "gnosis": {
+        "name": "Gnosis Chain",
+        "rpc": "https://rpc.gnosischain.com",
+        "native_token": "xdai",
+        "native_symbol": "XDAI",
+        "explorer": "https://gnosisscan.io"
+    },
+    "moonbeam": {
+        "name": "Moonbeam",
+        "rpc": "https://rpc.api.moonbeam.network",
+        "native_token": "moonbeam",
+        "native_symbol": "GLMR",
+        "explorer": "https://moonscan.io"
+    },
+    "celo": {
+        "name": "Celo",
+        "rpc": "https://forno.celo.org",
+        "native_token": "celo",
+        "native_symbol": "CELO",
+        "explorer": "https://celoscan.io"
+    },
+    "cronos": {
+        "name": "Cronos",
+        "rpc": "https://evm.cronos.org",
+        "native_token": "crypto-com-chain",
+        "native_symbol": "CRO",
+        "explorer": "https://cronoscan.com"
+    }
+}
 
-async def fetch_token_price(token_symbol: str) -> Dict:  # type: ignore[arg-type]
-    """Fetch token price from CoinGecko API"""
+price_cache = {}
+cache_timestamp = {}
+
+
+def get_supported_chains() -> List[str]:
+    return list(CHAIN_CONFIG.keys())
+
+
+def validate_wallet_address(address: str) -> Dict:
+    if not isinstance(address, str):
+        return {"valid": False, "error": "Address must be a string"}
+
+    address = address.strip()
+
+    if not re.match(r'^0x[a-fA-F0-9]{40}$', address):
+        return {"valid": False, "error": "Invalid EVM address format"}
+
+    try:
+        checksum_address = Web3.to_checksum_address(address)
+
+        if checksum_address == "0x0000000000000000000000000000000000000000":
+            return {"valid": False, "error": "Cannot use zero address"}
+
+        return {"valid": True, "checksum": checksum_address, "error": None}
+    except Exception as e:
+        return {"valid": False, "error": f"Invalid address: {str(e)}"}
+
+
+async def fetch_token_price_cached(token_id: str) -> Dict:
+    current_time = datetime.now(timezone.utc).timestamp()
+
+    if token_id in price_cache:
+        cached_time = cache_timestamp.get(token_id, 0)
+        if current_time - cached_time < 60:
+            return price_cache[token_id]
+
     url = "https://api.coingecko.com/api/v3/simple/price"
     params = {
-        "ids": token_symbol.lower(),
+        "ids": token_id.lower(),
         "vs_currencies": "usd",
         "include_24hr_change": "true"
     }
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params, timeout=10) as response:
+            async with session.get(url, params=params, timeout=5) as response:
                 if response.status == 200:
                     data = await response.json()
-                    token_data = data.get(token_symbol.lower(), {})
-                    return {
+                    token_data = data.get(token_id.lower(), {})
+                    result = {
                         "price": token_data.get("usd", 0),
-                        "change_24h": token_data.get("usd_24h_change", 0)
+                        "change_24h": token_data.get("usd_24h_change", 0),
+                        "success": True
                     }
+
+                    price_cache[token_id] = result
+                    cache_timestamp[token_id] = current_time
+
+                    return result
     except Exception as e:
-        print(f"⚠️ Failed to fetch price for {token_symbol}: {e}")
-        return {"price": 0, "change_24h": 0}
+        print(f"⚠️ Price fetch error: {e}")
+
+    return {"price": 0, "change_24h": 0, "success": False}
 
 
-async def get_wallet_balance(ctx: Context, wallet: str, chain: str) -> List[Dict]:
-    """Get real wallet balances using Web3"""
+async def get_wallet_balance_lightweight(ctx: Context, wallet: str, chain: str) -> List[Dict]:
 
-    chain_rpc = {
-        "ethereum": "https://mainnet.infura.io/v3/YOUR_INFURA_KEY",
-        "bsc": "https://bsc-dataseed.binance.org/",
-        "polygon": "https://polygon-rpc.com"
-    }
+    validation = validate_wallet_address(wallet)
+    if not validation["valid"]:
+        raise ValueError(f"Invalid wallet: {validation['error']}")
 
-    rpc_url = chain_rpc.get(chain.lower())
-    if not rpc_url:
-        raise ValueError(f"No RPC URL configured for chain {chain}")
+    wallet_checksum = validation["checksum"]
+    chain_lower = chain.lower()
 
-    web3 = Web3(Web3.HTTPProvider(rpc_url))
-    wallet_checksum = Web3.to_checksum_address(wallet)
+    if chain_lower not in CHAIN_CONFIG:
+        raise ValueError(f"Unsupported chain: {chain}")
 
-    if not web3.isConnected():
-        raise ConnectionError(f"Unable to connect to {chain} RPC")
+    config = CHAIN_CONFIG[chain_lower]
 
-    # Get native balance (ETH, BNB, MATIC)
-    native_balance = web3.eth.get_balance(wallet_checksum)
-    native_balance_eth = web3.fromWei(native_balance, "ether")
+    try:
+        web3 = Web3(Web3.HTTPProvider(
+            config["rpc"],
+            request_kwargs={'timeout': 5}
+        ))
 
-    balances = [{
-        "token": chain.lower(),
-        "symbol": "ETH" if chain.lower() == "ethereum" else chain.upper(),
-        "balance": float(native_balance_eth),
-        "chain": chain
-    }]
+        native_balance_wei = web3.eth.get_balance(wallet_checksum)
+        native_balance = float(web3.from_wei(native_balance_wei, "ether"))
 
-    # Optional: Add ERC20 token balances using contract ABI
-    # Example for USDC
-    erc20_tokens = {
-        "ethereum": {
-            "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-        }
-    }
+        if native_balance < 0.0001:
+            return []
 
-    if chain.lower() in erc20_tokens:
-        for symbol, addr in erc20_tokens[chain.lower()].items():
-            contract = web3.eth.contract(address=addr, abi=[
-                {
-                    "constant": True,
-                    "inputs": [{"name": "_owner", "type": "address"}],
-                    "name": "balanceOf",
-                    "outputs": [{"name": "balance", "type": "uint256"}],
-                    "type": "function"
-                }
-            ])
-            token_balance = contract.functions.balanceOf(wallet).call()
-            decimals = 6 if symbol == "USDC" else 18
-            balances.append({
-                "token": symbol,
-                "symbol": symbol,
-                "balance": token_balance / (10 ** decimals),
-                "chain": chain
-            })
+        price_data = await fetch_token_price_cached(config["native_token"])
 
-    # Fetch USD prices for all tokens
-    enriched_balances = []
-    for asset in balances:
-        price_data = await fetch_token_price(asset["token"])
-
-        ctx.logger.info(
-            f"[{asset['chain'].upper()}] {asset['symbol']}: ${price_data['price']:.2f} (24h Change: {price_data['change_24h']:.2f}%)")
-
-        enriched_balances.append({
-            "token": asset["symbol"],
-            "balance": asset["balance"],
+        enriched_balances = [{
+            "token": config["native_symbol"],
+            "balance": native_balance,
             "price": price_data["price"],
-            "value_usd": asset["balance"] * price_data["price"],
+            "value_usd": native_balance * price_data["price"],
             "change_24h": price_data["change_24h"],
-            "chain": asset["chain"]
-        })
+            "chain": chain_lower
+        }]
 
-    return enriched_balances
+        if enriched_balances[0]["value_usd"] > 0.01:
+            ctx.logger.info(
+                f"[{config['name']}] {config['native_symbol']}: "
+                f"{native_balance:.4f} = ${enriched_balances[0]['value_usd']:.2f}"
+            )
+
+        return enriched_balances
+
+    except Exception as e:
+        ctx.logger.error(f"Error on {config['name']}: {str(e)[:100]}")
+        return []
 
 
 def calculate_risk_score(assets: List[Dict]) -> float:
-    """Calculate basic risk score (0-1)"""
     if not assets:
         return 0.0
 
@@ -153,72 +243,108 @@ def calculate_risk_score(assets: List[Dict]) -> float:
     if total_value == 0:
         return 0.0
 
-    # Concentration risk (Herfindahl index)
     concentration = sum((a["value_usd"] / total_value) ** 2 for a in assets)
 
-    # Volatility risk (based on 24h change)
+    # Volatility risk
     avg_volatility = sum(abs(a.get("change_24h", 0)) for a in assets) / len(assets)
     volatility_score = min(avg_volatility / 20, 1)
 
-    # Combined risk score
-    risk_score = (concentration * 0.4) + (volatility_score * 0.6)
+    unique_chains = len(set(a["chain"] for a in assets))
+    chain_diversity_score = 1.0 if unique_chains == 1 else max(0.0, 1.0 - (unique_chains / 5.0))
+
+    risk_score = (
+            concentration * 0.35 +
+            volatility_score * 0.45 +
+            chain_diversity_score * 0.20
+    )
 
     return min(risk_score, 1.0)
 
 
-async def add_portfolio_key(ctx: Context, key: str):
-    """Add portfolio key to the master list"""
-    keys = ctx.storage.get("portfolio_keys") or []
-    if key not in keys:
-        keys.append(key)
-        ctx.storage.set("portfolio_keys", keys)
-
-
-async def get_all_portfolios(ctx: Context) -> Dict[str, dict]:
-    """Fetch all portfolios"""
-    keys = ctx.storage.get("portfolio_keys") or []
-    portfolios = {}
-    for key in keys:
-        value = ctx.storage.get(key)
-        if value:
-            portfolios[key] = value
-    return portfolios
-
-
 @portfolio_agent.on_message(model=Portfolio)
 async def register_portfolio(ctx: Context, sender: str, msg: Portfolio):
-    """Register a new portfolio for monitoring"""
-    ctx.logger.info(f"📝 Registering portfolio for user: {msg.user_id}")
+    ctx.logger.info(f"📝 Registering portfolio for: {msg.user_id}")
 
-    ctx.storage.set(f"portfolio_{msg.user_id}", {
-        "wallets": msg.wallets,
-        "chains": msg.chains,
+    invalid_wallets = []
+    valid_wallets = []
+
+    for wallet in msg.wallets:
+        validation = validate_wallet_address(wallet)
+        if validation["valid"]:
+            valid_wallets.append(validation["checksum"])
+        else:
+            invalid_wallets.append(f"{wallet}: {validation['error']}")
+
+    if invalid_wallets:
+        error_msg = "Invalid wallet(s): " + "; ".join(invalid_wallets)
+        await ctx.send(sender, MessageResponse(message=error_msg))
+        return
+
+    invalid_chains = [c for c in msg.chains if c.lower() not in CHAIN_CONFIG]
+    if invalid_chains:
+        supported = ", ".join(get_supported_chains())
+        error_msg = f"Unsupported chain(s): {', '.join(invalid_chains)}. Supported: {supported}"
+        await ctx.send(sender, MessageResponse(message=error_msg))
+        return
+
+    if len(msg.chains) > 5:
+        await ctx.send(
+            sender,
+            MessageResponse(message="⚠️ Max 5 chains on Agentverse. Please select your top chains.")
+        )
+        return
+
+    portfolio_key = f"portfolio_{msg.user_id}"
+    ctx.storage.set(portfolio_key, {
+        "wallets": valid_wallets,
+        "chains": [c.lower() for c in msg.chains],
         "registered_at": msg.timestamp,
-        "owner": sender
+        "owner": sender,
+        "last_scan": None
     })
 
-    await ctx.send(sender, MessageResponse(message=f"Portfolio registered for {msg.user_id}"))
-    await scan_portfolio(ctx, msg.user_id)
+    keys = ctx.storage.get("portfolio_keys") or []
+    if portfolio_key not in keys:
+        keys.append(portfolio_key)
+        ctx.storage.set("portfolio_keys", keys)
+
+    await ctx.send(
+        sender,
+        MessageResponse(
+            message=f"✅ Portfolio registered: {len(valid_wallets)} wallet(s), {len(msg.chains)} chain(s). Scanning starts next cycle."
+        )
+    )
 
 
-async def scan_portfolio(ctx: Context, user_id: str):
-    """Scan portfolio and create snapshot"""
+async def scan_single_portfolio(ctx: Context, user_id: str):
     portfolio = ctx.storage.get(f"portfolio_{user_id}")
     if not portfolio:
-        ctx.logger.warning(f"Portfolio {user_id} not found")
-        return
+        return None
 
     all_assets = []
     total_value = 0
 
-    for wallet in portfolio["wallets"]:
-        for chain in portfolio["chains"]:
-            try:
-                balances = await get_wallet_balance(ctx, wallet, chain)
-                all_assets.extend(balances)
-                total_value += sum(b["value_usd"] for b in balances)
-            except Exception as e:
-                ctx.logger.error(f"Error scanning {wallet} on {chain}: {e}")
+    wallet = portfolio["wallets"][0]
+
+    chains_to_scan = portfolio["chains"][:3]
+
+    ctx.logger.info(f"🔍 Scanning {wallet[:10]}... on {len(chains_to_scan)} chain(s)")
+
+    for chain in chains_to_scan:
+        try:
+            balances = await get_wallet_balance_lightweight(ctx, wallet, chain)
+            all_assets.extend(balances)
+            total_value += sum(b["value_usd"] for b in balances)
+
+            await asyncio.sleep(0.5)
+
+        except Exception as e:
+            ctx.logger.error(f"Error on {chain}: {str(e)[:50]}")
+            continue
+
+    if not all_assets:
+        ctx.logger.info(f"No assets found for {user_id}")
+        return None
 
     risk_score = calculate_risk_score(all_assets)
 
@@ -230,49 +356,63 @@ async def scan_portfolio(ctx: Context, user_id: str):
         risk_score=risk_score
     )
 
-    user_snapshots = ctx.storage.get(f"snapshots_{user_id}") or []
-    user_snapshots.append(snapshot)
-    ctx.storage.set(f"snapshots_{user_id}", user_snapshots)
+    snapshots = ctx.storage.get(f"snapshots_{user_id}") or []
+    snapshots.append(snapshot.dict())
+    ctx.storage.set(f"snapshots_{user_id}", snapshots[-5:])
 
-    ctx.logger.info(
-        f"📊 Portfolio snapshot created: "
-        f"${total_value:.2f}, Risk: {risk_score:.2%}"
-    )
+    portfolio["last_scan"] = datetime.now(timezone.utc).isoformat()
+    ctx.storage.set(f"portfolio_{user_id}", portfolio)
 
-    risk_agent_address = "agent1qwwc3jwx0x6z0sk07029n9ngztsrapcc0ngdwy8swzq50tt7t0nf726tmkm"
-    if risk_agent_address:
-        await ctx.send(risk_agent_address, snapshot)  # type: ignore[arg-type]
+    ctx.logger.info(f"📊 ${total_value:.2f}, Risk: {risk_score:.2%}")
+
+    if total_value > 1.0:
+        risk_agent_address = "agent1q2stpgsyl2h5dlpq7sfk47hfnjqsw84kf6m40defdfph65ftje4e56l5a0f"
+        await ctx.send(risk_agent_address, snapshot)
 
     return snapshot
 
 
-@portfolio_agent.on_interval(period=300.0)  # Every 5 minutes
+@portfolio_agent.on_interval(period=600.0)
 async def monitor_portfolios(ctx: Context):
-    """Periodically scan all registered portfolios"""
-    portfolios = await get_all_portfolios(ctx)
+    keys = ctx.storage.get("portfolio_keys") or []
 
-    if not portfolios:
+    if not keys:
         return
 
-    ctx.logger.info(f"🔄 Monitoring {len(portfolios)} portfolio(s)...")
+    scan_index = ctx.storage.get("scan_index") or 0
 
-    for key, _ in portfolios.items():
-        user_id = key.replace("portfolio_", "")
+    if scan_index >= len(keys):
+        scan_index = 0
+
+    if scan_index < len(keys):
+        portfolio_key = keys[scan_index]
+        user_id = portfolio_key.replace("portfolio_", "")
+
+        ctx.logger.info(f"🔄 Scanning portfolio {scan_index + 1}/{len(keys)}: {user_id}")
+
         try:
-            await scan_portfolio(ctx, user_id)
-            await asyncio.sleep(2)
+            await scan_single_portfolio(ctx, user_id)
         except Exception as e:
-            ctx.logger.error(f"Error monitoring {user_id}: {e}")
+            ctx.logger.error(f"Scan error for {user_id}: {str(e)[:100]}")
+
+        scan_index += 1
+        ctx.storage.set("scan_index", scan_index)
+
+    ctx.logger.info(f"Next scan in 10 minutes (portfolio {scan_index % len(keys) + 1}/{len(keys)})")
 
 
 @portfolio_agent.on_event("startup")
 async def startup(ctx: Context):
-    portfolios = await get_all_portfolios(ctx)
+    keys = ctx.storage.get("portfolio_keys") or []
+    supported_chains = get_supported_chains()
+
     ctx.logger.info("=" * 60)
-    ctx.logger.info("🛡️  DeFiGuard Portfolio Monitor Agent Started!")
-    ctx.logger.info(f"📍 Agent Address: {portfolio_agent.address}")
-    ctx.logger.info(f"Loaded {len(portfolios)} portfolios from storage")
-    ctx.logger.info("☁️  Running on Agentverse")
+    ctx.logger.info("🛡️  DeFiGuard Portfolio Monitor (Agentverse)")
+    ctx.logger.info(f"📍 Address: {portfolio_agent.address}")
+    ctx.logger.info(f"📊 Portfolios: {len(keys)}")
+    ctx.logger.info(f"🔗 Chains: {len(supported_chains)}")
+    ctx.logger.info("⚡ Optimized for Agentverse limits")
+    ctx.logger.info("🔄 Scans 1 portfolio per 10-min cycle")
     ctx.logger.info("=" * 60)
 
 

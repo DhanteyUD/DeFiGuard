@@ -13,7 +13,7 @@ The **Risk Analysis Agent** is the intelligent decision-making core of DeFiGuard
 ## 🎯 Agent Details
 
 - **Agent Name**: `risk_analysis`
-- **Agent Address**: `agent1qwwc3jwx0x6z0sk07029n9ngztsrapcc0ngdwy8swzq50tt7t0nf726tmkm`
+- **Agent Address**: `agent1q2stpgsyl2h5dlpq7sfk47hfnjqsw84kf6m40defdfph65ftje4e56l5a0f`
 - **Network**: Fetch.ai Testnet (Agentverse)
 - **AI Engine**: **SingularityNET MeTTa Knowledge Graphs**
 - **Knowledge Base**: 50+ assets, 25+ risk rules
@@ -373,11 +373,11 @@ All decisions traceable to MeTTa knowledge base
 ## 🔗 Agent Communication
 
 ### Receives Messages From:
-- **Portfolio Monitor Agent** (`agent1qt2fhu92p6uq3yq692drxrnx74yh7jqs0vjm65st3tz6wej6rxf7qehenpc`) - Portfolio snapshots for analysis
+- **Portfolio Monitor Agent** (`agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn`) - Portfolio snapshots for analysis
 
 ### Sends Messages To:
 - **Original Requester** - MeTTa-analyzed risk reports
-- **Alert Agent** (`agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f`) - High/critical risk alerts
+- **Alert Agent** (`agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun`) - High/critical risk alerts
 
 ## 🚀 Usage Example
 
@@ -416,7 +416,7 @@ async def request_analysis(ctx: Context):
     )
     
     await ctx.send(
-        "agent1qwwc3jwx0x6z0sk07029n9ngztsrapcc0ngdwy8swzq50tt7t0nf726tmkm",
+        "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun",
         request
     )
 
@@ -449,7 +449,7 @@ if __name__ == "__main__":
 
 | Component          | Technology                           | Purpose                   |
 |--------------------|--------------------------------------|---------------------------|
-| **Framework**      | Fetch.ai uAgents `v0.12.0`           | Agent infrastructure      |
+| **Framework**      | Fetch.ai uAgents `v0.22.10`          | Agent infrastructure      |
 | **AI Engine**      | **SingularityNET MeTTa**             | Knowledge graph reasoning |
 | **Knowledge Base** | MeTTa (50+ assets, 25+ rules)        | Risk classification       |
 | **Reasoning**      | Pattern matching & logical inference | Decision making           |

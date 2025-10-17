@@ -120,7 +120,10 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 ## ✨ Features
 
 ### 🔍 Real-Time Portfolio Monitoring
-- ✅ **Multi-chain support**: Ethereum, Polygon, BSC
+- ✅ **Multi-chain support**: 12 EVM-compatible chains
+> `Ethereum` `BSC` `Polygon` `Arbitrum` `Optimism` `Avalanche`
+> 
+> `Base` `Fantom` `Gnosis` `Moonbeam` `Celo` `Cronos`
 - ✅ **Automatic balance tracking**: Every 5 minutes
 - ✅ **Historical snapshots**: Track portfolio changes over time
 - ✅ **Asset valuation**: Real-time USD pricing via CoinGecko
@@ -140,7 +143,7 @@ DeFiGuard leverages the **full ASI Alliance technology stack** to deliver intell
 ### 🚨 Intelligent Alerts (ASI:One)
 - ✅ **Risk-based levels**: Low → Medium → High → Critical
 - ✅ **ASI:One chat integration**: Natural language interface
-- ✅ **Interactive commands**: `status`, `history`, `portfolio`, `register  <wallet> <chains>`, `help`
+- ✅ **Interactive commands**: `status`, `history`, `portfolio`, `register  <wallet> <chains>`, `chains`, `help`
 - ✅ **Customizable thresholds**: Personalized risk tolerance
 - ✅ **Alert history**: Track past notifications
 - ✅ **Real-time delivery**: Instant notifications
@@ -181,11 +184,11 @@ All agents deployed on **[Agentverse](https://agentverse.ai/agents)** (Fetch.ai 
 
 | Agent                 | Agentverse Address                                                  | Status                   |
 |-----------------------|---------------------------------------------------------------------|--------------------------|
-| **Portfolio Monitor** | `agent1qt2fhu92p6uq3yq692drxrnx74yh7jqs0vjm65st3tz6wej6rxf7qehenpc` | ✅ Active                 |
-| **Risk Analysis**     | `agent1qwwc3jwx0x6z0sk07029n9ngztsrapcc0ngdwy8swzq50tt7t0nf726tmkm` | ✅ Active                 |
-| **Alert Agent**       | `agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f` | ✅ Active + Chat Protocol |
-| **Market Data**       | `agent1qt70kl5x938q9dlryd9tnfr3yk5z3pmaq85jrl5vkwsguhwxazdyjr29aw3` | ✅ Active                 |
-| **Fraud Detection**   | `agent1q220sdmkgn3dj2pxz38cmeer2kt335ev6vqhta3f4a0cuz4h9zcwyp5qzm5` | ✅ Active                 |
+| **Portfolio Monitor** | `agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn` | ✅ Active                 |
+| **Risk Analysis**     | `agent1q2stpgsyl2h5dlpq7sfk47hfnjqsw84kf6m40defdfph65ftje4e56l5a0f` | ✅ Active                 |
+| **Alert Agent**       | `agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun` | ✅ Active + Chat Protocol |
+| **Market Data**       | `agent1qv7r47p6r8as5kw083fr36rjw4yjn3z59pe77x2hqeu7kgfh8leas7wxux8` | ✅ Active                 |
+| **Fraud Detection**   | `agent1qvyvsyr93jp4detyrt7zy3hnvtrpu4jthy90nwv8uqpeunhywvdpgtglguc` | ✅ Active                 |
 
 **📖 Individual Agent Documentation:** See [docs/agents](docs/agents) for detailed README for each agent.
 
@@ -201,8 +204,8 @@ All agents deployed on **[Agentverse](https://agentverse.ai/agents)** (Fetch.ai 
 ### Prerequisites
 
 ```bash
-# Python 3.8+ required
-python --version  # Should be 3.8 or higher
+# Python 3.10+ required
+python --version  # Should be 3.10 or higher
 
 # Git (for cloning)
 git --version
@@ -335,48 +338,65 @@ python main.py
 
 ```
 User: [Opens Chat]
-Agent: 👋 Welcome to DeFiGuard Alert Agent!
+Agent: 👋 Welcome to DeFiGuard!
        
-       To get started, register your portfolio:
+       Multi-chain portfolio risk monitoring with AI.
        
-       Format: register <wallet_address> <chains>
-       Example: register 0x742d35...0bEb ethereum,polygon
+       Get Started
        
-       Type 'help' for more commands.
+       `register <wallet_address> <chains>`
+       
+       Example:
+       `register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon,arbitrum`
+        
+       Supported:
+       12 chains including Ethereum, BSC, Polygon, Arbitrum, Optimism, Avalanche, Base & more!
 
-User: register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon
-Agent: ✅ Portfolio Registered Successfully!
+       Type `chains` to see all supported chains.
        
-       Wallet: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
-       Chains: ethereum, polygon
+       Type `help` for more commands.
+
+User: register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum polygon
+Agent: ✅ Portfolio Registered!
        
-       Your portfolio is now being monitored 24/7.
-       Type 'status' to check your current risk level.
+       Wallet: 
+       `0x742d35Cc...5f0bEb`
+       
+       Monitoring 2 chain(s):
+       • Ethereum
+       • Polygon
+       
+       🛡️ Your portfolio is now protected 24/7.
+       You'll receive alerts automatically when risks are detected.
+       
+       Type `status` to check current risk level.
 
 User: portfolio
-Agent: 📋 Your Registered Portfolio
+Agent: 📋 Your Portfolio
        
-       Wallets:
-       1. 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+       Wallet(s):
+       1. `0x742d35Cc...5f0bEb`
        
-       Chains: ethereum, polygon
-       Registered: 2025-10-14T10:35
+       Monitoring 2 chain(s): 
+       • Ethereum
+       • Polygon
+
+       Registered: Oct 15, 2025 02:30 PM
        
-       To update: register <new_wallet> <chains>
+       To update: 
+       `register <new_wallet> <chains>`
 
 User: status
-Agent: 📊 Current Portfolio Status
-       Risk Level: MEDIUM
-       Risk Score: 45%
-       Last Updated: 2025-10-14T10:30
+Agent: 📊 Portfolio Status
+       🟠 Risk Level: HIGH
+       Risk Score: 75%
+       Last Updated: Oct 16, 2025 10:35 AM
+       Action: Rebalance within 24h
        
-       Type 'history' for more details.
+       Type 'history' for details.
 
 User: history
-Agent: 📜 Recent Alerts
-       1. MEDIUM (45%) - 2025-10-14 10:30
-       2. LOW (32%) - 2025-10-13 15:20
-       3. LOW (28%) - 2025-10-12 09:15
+Agent: No alerts yet. This is good! 🎉
 ```
 
 
@@ -385,6 +405,7 @@ Agent: 📜 Recent Alerts
 - `status` - Check current portfolio risk level
 - `history` - View recent alerts (last 5)
 - `portfolio` - View registered portfolio
+- `chains` - List supported chains  
 - `help` - Show command reference
 
 ### Method 2: Via Agentverse AI
@@ -418,7 +439,7 @@ async def register_portfolio(ctx: Context):
     
     # Send to Portfolio Monitor Agent
     await ctx.send(
-        "agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f",
+        "agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn",
         portfolio
     )
     ctx.logger.info("✅ Portfolio registered!")
@@ -459,29 +480,19 @@ Risk Score = (Concentration × 0.3) + (Volatility × 0.4) + (Asset Quality × 0.
 
 ### Risk Components
 
-#### 1. Concentration Risk (30% weight)
-- **Method**: Herfindahl-Hirschman Index (HHI)
-- **Formula**: `HHI = Σ(asset_percentage²)`
-- **Thresholds** (via MeTTa):
-  - Critical: Single asset >70%
-  - High: Single asset >50%
-  - Medium: Single asset >30%
+#### 1. Concentration Risk (35% weight)
+- Uses Herfindahl-Hirschman Index (HHI)
+- Formula: `Σ(asset_value/total_value)²`
+- Higher concentration = Higher risk
 
-#### 2. Volatility Risk (40% weight)
-- **Method**: 24-hour price change analysis
-- **Formula**: `volatility_score = avg_change / 20`
-- **Thresholds** (via MeTTa):
-  - Extreme: >50% change in 24h
-  - High: >20% change in 24h
-  - Medium: >10% change in 24h
+#### 2. Volatility Risk (45% weight)
+- Based on average 24-hour price changes
+- Normalized: `min(avg_volatility / 20, 1)`
+- Caps at 20% volatility for scaling
 
-#### 3. Asset Quality Risk (30% weight)
-- **Method**: MeTTa knowledge graph classification
-- **Factors**:
-  - Token reputation (via MeTTa: `has-risk bitcoin low`)
-  - Leverage indicators (via MeTTa: `has-risk-pattern leverage critical`)
-  - Stablecoin ratio
-  - Liquidity metrics
+#### 3. Asset Quality Risk (20% weight)
+- Penalizes single-chain portfolios
+- Formula: `1.0 if 1 chain else max(0, 1 - unique_chains/5)`
 
 ### MeTTa-Powered Reasoning
 
@@ -543,13 +554,13 @@ python verify_metta.py
 
 ### Core Stack
 
-| Technology               | Version  | Purpose             |
-|--------------------------|----------|---------------------|
-| **Python**               | ` 3.12`  | Core language       |
-| **Fetch.ai uAgents**     | `0.12.0` | Agent framework     |
-| **SingularityNET MeTTa** | Latest   | Knowledge reasoning |
-| **Agentverse**           | Cloud    | Agent deployment    |
-| **ASI:One**              | Latest   | Chat interface      |
+| Technology               | Version   | Purpose             |
+|--------------------------|-----------|---------------------|
+| **Python**               | `3.12`    | Core language       |
+| **Fetch.ai uAgents**     | `0.22.10` | Agent framework     |
+| **SingularityNET MeTTa** | Latest    | Knowledge reasoning |
+| **Agentverse**           | Cloud     | Agent deployment    |
+| **ASI:One**              | Latest    | Chat interface      |
 
 ### APIs & Libraries
 

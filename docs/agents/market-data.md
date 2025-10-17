@@ -12,7 +12,7 @@ The **Market Data Agent** is DeFiGuard's real-time market intelligence provider.
 ## 🎯 Agent Details
 
 - **Agent Name**: `market_data`
-- **Agent Address**: `agent1qt70kl5x938q9dlryd9tnfr3yk5z3pmaq85jrl5vkwsguhwxazdyjr29aw3`
+- **Agent Address**: `agent1qv7r47p6r8as5kw083fr36rjw4yjn3z59pe77x2hqeu7kgfh8leas7wxux8`
 - **Network**: Fetch.ai Testnet (Agentverse)
 - **Data Source**: CoinGecko API v3
 - **Update Frequency**: Every 5 minutes
@@ -176,7 +176,7 @@ Comprehensive market intelligence:
 
 ### Sends Data/Alerts To:
 - **Requesting Agent** - Market data response
-- **Alert Agent** (`agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f`) - Market anomaly alerts
+- **Alert Agent** (`agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun`) - Market anomaly alerts
 
 ---
 
@@ -223,7 +223,7 @@ async def get_prices(ctx: Context):
     )
     
     await ctx.send(
-        "agent1qftjr2fh4uuk0se60sp6e6yevamtlmh5tlsjxx9ny2kgenggf089unxed9f",
+        "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun",
         request
     )
 
@@ -240,7 +240,7 @@ if __name__ == "__main__":
 ```python
 request = MarketDataRequest(
     token_ids=["bitcoin", "ethereum"],
-    request_type="all"  # Full market statistics
+    request_type="all"
 )
 ```
 
@@ -360,7 +360,7 @@ Automatically notify users of significant market movements.
 ### Batch Requests
 Request multiple tokens in single call:
 ```python
-token_ids=["bitcoin", "ethereum", "cardano"]  # One API call
+token_ids=["bitcoin", "ethereum", "cardano"]
 ```
 
 Instead of individual requests:
