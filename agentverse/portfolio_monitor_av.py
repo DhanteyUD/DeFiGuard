@@ -28,6 +28,8 @@ class MessageResponse(Model):
 
 portfolio_agent = Agent(
     name="portfolio_monitor",
+    seed="QqcDrEd6wdYweU_N5pLZDl91s27qctWzBx1UCxrX1rQ",
+    port=8000,
     mailbox=True
 )
 

@@ -1,5 +1,5 @@
 from uagents import Agent, Context, Model, Protocol
-# from uagents.setup import fund_agent_if_low
+from uagents.setup import fund_agent_if_low
 from uagents_core.contrib.protocols.chat import (
     ChatAcknowledgement,
     ChatMessage,
@@ -47,11 +47,11 @@ alert_agent = Agent(
     seed=os.getenv("ALERT_AGENT_SEED", "alert_demo_seed"),
     port=8002,
     endpoint=["http://localhost:8002/submit"],
-    # mailbox=False, # Required for ASI:One
-    # publish_agent_details = True # Required for ASI:One
+    mailbox=True, # Required for ASI:One
+    publish_agent_details = True # Required for ASI:One
 )
 
-# fund_agent_if_low(str(alert_agent.wallet.address()))
+fund_agent_if_low(str(alert_agent.wallet.address()))
 
 print(f"Alert Agent Address: {alert_agent.address}")
 

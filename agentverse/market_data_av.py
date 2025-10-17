@@ -30,6 +30,8 @@ class ErrorResponse(Model):
 
 market_agent = Agent(
     name="market_data",
+    seed="pBli5u3yYGKKUCmY52CqWYrhAQtPDam_H7A_1KFKtow",
+    port=8003,
     mailbox=True
 )
 

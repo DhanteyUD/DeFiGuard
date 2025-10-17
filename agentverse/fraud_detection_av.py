@@ -27,6 +27,8 @@ class ErrorResponse(Model):
 
 fraud_agent = Agent(
     name="fraud_detection",
+    seed="cmzDIwrv0VIvrP22YW6XAU9Jkum_--lYK2KLdkZAaAw",
+    port=8004,
     mailbox=True
 )
 

@@ -45,6 +45,8 @@ class ChatAckWrapper(Model):
 
 alert_agent = Agent(
     name="alert_agent",
+    seed="stFHP3IHIBU2gmKajczfsTqlykC0fZ0lVXTbdHq_-2g",
+    port=8002,
     mailbox=True,
     publish_agent_details=True
 )
