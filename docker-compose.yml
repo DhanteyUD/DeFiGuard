@@ -25,6 +25,7 @@ services:
       - "8003:8003"
       - "8004:8004"
       - "8888:8888"
+      - "8889:8889"
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
