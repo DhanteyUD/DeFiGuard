@@ -12,6 +12,9 @@ import asyncio
 
 load_dotenv()
 
+PORT = int(os.getenv("PORT", 8888))
+HEALTH_PORT = PORT + 1
+
 logging.basicConfig(
     level=getattr(logging, os.getenv('LOG_LEVEL', 'INFO')),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -47,7 +50,7 @@ def print_banner():
     print("\n  🚀 All agents initialized successfully!")
     print("  🌐 ASI:One Chat Protocol enabled on Alert Agent")
     print("  🧠 SingularityNET MeTTa integration: ACTIVE")
-    print(f"  📡 Bureau running on port 8888")
+    print(f"  📡 Bureau running on port {PORT}")
     print("\n" + "=" * 60 + "\n")
 
 
@@ -130,7 +133,7 @@ async def start_http_server():
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 8000)
+    site = web.TCPSite(runner, '0.0.0.0', HEALTH_PORT)
     await site.start()
     logger.info("✅ HTTP health server started on port 8000")
 
@@ -144,8 +147,8 @@ def main():
         save_agent_addresses()
 
         bureau = Bureau(
-            port=8888,
-            endpoint="http://0.0.0.0:8888/submit"
+            port=PORT,
+            endpoint=f"http://0.0.0.0:{PORT}/submit"
         )
 
         bureau.add(portfolio_agent)
