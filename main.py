@@ -32,7 +32,7 @@ def print_banner():
     ║                                                           ║
     ║              🛡️  DEFIGUARD SYSTEM v1.0                    ║
     ║                                                           ║
-    ║         ccMulti-Agent Risk Management System              ║
+    ║           Multi-Agent Risk Management System              ║
     ║                Powered by ASI Alliance                    ║
     ║                  Running in Docker 🐳                     ║
     ║                                                           ║
