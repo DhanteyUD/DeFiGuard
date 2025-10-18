@@ -8,9 +8,14 @@
 
 AI-powered chat interface for DeFi portfolio risk monitoring. Users register portfolios, receive real-time alerts, and interact with ASI-1 AI for risk insights via natural language conversation.
 
-**Agent Address:** `agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun`  
-**Network:** Fetch.ai Testnet (Agentverse)  
-**Interface:** ASI:One Chat
+---
+
+## 🎯 Agent Details
+
+- **Agent Name**: `alert_agent`
+- **Agent Address:** `agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l`  
+- **Network:** Fetch.ai Testnet (Agentverse)  
+- **Interface:** ASI:One Chat
 
 ---
 
@@ -184,7 +189,7 @@ Returns AI-generated response
 3. Risk Agent - `Acknowledgement`
 
 **Portfolio Monitor Address:**  
-`agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn`
+`agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f`
 
 ---
 
