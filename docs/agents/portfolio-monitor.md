@@ -12,7 +12,7 @@ The **Portfolio Monitor Agent** is the core data collection component of the DeF
 ## 🎯 Agent Details
 
 - **Agent Name**: `portfolio_monitor`
-- **Agent Address**: `agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn`
+- **Agent Address**: `agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f`
 - **Network**: Fetch.ai Testnet (Agentverse) 
 - **Status**: ✅ Active  
 - **Scan Interval**: 600 seconds (10 minutes)
@@ -184,7 +184,7 @@ risk_score = (
 ## 🔗 Agent Communication
 
 ### ➡️ Sends Messages To:
-- **Risk Analysis Agent** (`agent1q2stpgsyl2h5dlpq7sfk47hfnjqsw84kf6m40defdfph65ftje4e56l5a0f`)
+- **Risk Analysis Agent** (`agent1qtrn82fz9tnspwudzrjr7mm9ncwvavjse5xcv7j9t06gajmdxq0yg38dyx5`)
   - Portfolio snapshots with `total_value_usd > $1.00`
   - Sends `PortfolioSnapshot` model
 
@@ -271,7 +271,7 @@ class Portfolio(Model):
 class MessageResponse(Model):
     message: str
 
-PORTFOLIO_AGENT = "agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn"
+PORTFOLIO_AGENT = "agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f"
 
 @client.on_event("startup")
 async def register_portfolio(ctx: Context):

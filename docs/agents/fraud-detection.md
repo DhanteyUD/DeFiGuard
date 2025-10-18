@@ -12,7 +12,7 @@ The **Fraud Detection Agent** is DeFiGuard's security guardian, protecting users
 ## 🎯 Agent Details
 
 - **Agent Name**: `fraud_detection`
-- **Agent Address**: `agent1qvyvsyr93jp4detyrt7zy3hnvtrpu4jthy90nwv8uqpeunhywvdpgtglguc`
+- **Agent Address**: `agent1q0x3wcul6azlcu4wy5khce9hklav28ea9f8kjqcq649rs4jat5kc7zxarn6`
 - **Network**: Fetch.ai Testnet (Agentverse)
 - **Detection Methods**: Real-time API analysis, pattern matching, behavioral scoring
 - **Security APIs**: GoPlus Security, Honeypot.is, Blockchain Explorers
@@ -412,7 +412,7 @@ Recommendations:
 
 ### Sends Reports/Alerts To:
 - **Requesting Agent** - Fraud analysis report
-- **Alert System Agent** (`agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun`) - Critical fraud alerts (risk ≥80)
+- **Alert System Agent** (`agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l`) - Critical fraud alerts (risk ≥80)
 
 ---
 
@@ -447,7 +447,7 @@ async def analyze_token(ctx: Context):
     )
     
     await ctx.send(
-        "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun",
+        "agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l",
         request
     )
 

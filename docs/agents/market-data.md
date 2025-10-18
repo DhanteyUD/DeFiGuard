@@ -12,7 +12,7 @@ The **Market Data Agent** is DeFiGuard's real-time market intelligence provider.
 ## 🎯 Agent Details
 
 - **Agent Name**: `market_data`
-- **Agent Address**: `agent1qv7r47p6r8as5kw083fr36rjw4yjn3z59pe77x2hqeu7kgfh8leas7wxux8`
+- **Agent Address**: `agent1qgwdvuucfhpvucqdru0gnrwc2zqf0ak5u24rvxua9flcazctmdvdsyrr8qq`
 - **Network**: Fetch.ai Testnet (Agentverse)
 - **Data Source**: CoinGecko API v3
 - **Update Frequency**: Every 5 minutes
@@ -176,7 +176,7 @@ Comprehensive market intelligence:
 
 ### Sends Data/Alerts To:
 - **Requesting Agent** - Market data response
-- **Alert Agent** (`agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun`) - Market anomaly alerts
+- **Alert Agent** (`agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l`) - Market anomaly alerts
 
 ---
 
@@ -223,7 +223,7 @@ async def get_prices(ctx: Context):
     )
     
     await ctx.send(
-        "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun",
+        "agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l",
         request
     )
 

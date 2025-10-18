@@ -121,16 +121,8 @@ async def fetch_honeypot_check(token_address: str, chain: str) -> Dict:
 
 
 async def fetch_token_metadata(token_address: str, chain: str) -> Dict:
-    """
-    Fetch token name and symbol from blockchain explorer API
-    For BSC: Using BSCScan API (you'll need an API key)
-    """
-    # Note: You'll need to register for API keys:
-    # Etherscan: https://etherscan.io/apis
-
     print(f"Fetching {chain} from blockchain explorer API")
 
-    # Placeholder for API key - replace with your actual key
     API_KEY = "YOUR_API_KEY_HERE"
     base_url = "https://api.etherscan.io/api"
 
