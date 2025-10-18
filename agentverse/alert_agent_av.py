@@ -50,7 +50,7 @@ class ChatAckWrapper(Model):
 
 client = OpenAI(
     base_url='https://api.asi1.ai/v1',
-    api_key='sk_0265d6572c764f83b73ee0858f70890add3aa6d0f7314de2bebd42b2ca162038',
+    api_key='ASI_ONE_API_KEY',
 )
 
 alert_agent_av = Agent(
