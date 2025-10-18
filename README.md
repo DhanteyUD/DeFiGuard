@@ -1,6 +1,6 @@
 # 🛡️ DeFiGuard: Multi-Agent Risk Management System
 
-![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3) ![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1) ![Python](https://img.shields.io/badge/python-3.12-blue.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg)
+![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3) ![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1) ![Python](https://img.shields.io/badge/python-3.12-blue.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg) ![GitHub repo size](https://img.shields.io/github/repo-size/DhanteyUD/DeFiGuard) ![GitHub last commit](https://img.shields.io/github/last-commit/DhanteyUD/DeFiGuard)
 
 **AI-powered, multi-chain DeFi portfolio risk monitoring with autonomous agents**
 
