@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # Main DeFiGuard service - runs all 5 agents
+  defiguard:
+    build: .
+    container_name: defiguard_agents
+    restart: always
+    environment:
+      - PORTFOLIO_AGENT_SEED=${PORTFOLIO_AGENT_SEED}
+      - RISK_AGENT_SEED=${RISK_AGENT_SEED}
+      - ALERT_AGENT_SEED=${ALERT_AGENT_SEED}
+      - MARKET_AGENT_SEED=${MARKET_AGENT_SEED}
+      - FRAUD_AGENT_SEED=${FRAUD_AGENT_SEED}
+      - COINGECKO_API_KEY=${COINGECKO_API_KEY}
+      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL}
+      - ETHERSCAN_API_KEY=${ETHERSCAN_API_KEY}
+      - ASI_ONE_API_KEY=${ASI_ONE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - NETWORK=${NETWORK:-testnet}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+      - "8003:8003"
+      - "8004:8004"
+      - "8888:8888"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - defiguard_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Nginx reverse proxy for public access
+  nginx:
+    image: nginx:alpine
+    container_name: defiguard_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - defiguard
+    networks:
+      - defiguard_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  defiguard_network:
+    driver: bridge
+
+volumes:
+  data:
+  logs:
