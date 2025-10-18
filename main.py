@@ -10,7 +10,6 @@ load_dotenv()
 
 
 def print_banner():
-    """Print DeFiGuard banner"""
     banner = """
     ╔═══════════════════════════════════════════════════════════╗
     ║                                                           ║
@@ -48,21 +47,15 @@ def print_agent_addresses():
 
 
 def main():
-    """Main entry point for DeFiGuard system"""
-
-    # Print banner
     print_banner()
 
-    # Print agent addresses
     print_agent_addresses()
 
-    # Create bureau to manage all agents
     bureau = Bureau(
         port=8888,
-        endpoint="http://localhost:8888/submit"
+        endpoint="http://127.0.0.1:8888/submit",
     )
 
-    # Add all agents to bureau
     bureau.add(portfolio_agent)
     bureau.add(risk_agent)
     bureau.add(alert_agent)
@@ -74,7 +67,6 @@ def main():
     print("💬 Interact with the Alert Agent via ASI:One interface")
     print("🔗 Register portfolios by sending messages to Portfolio Agent\n")
 
-    # Run the bureau
     try:
         bureau.run()
     except KeyboardInterrupt:
