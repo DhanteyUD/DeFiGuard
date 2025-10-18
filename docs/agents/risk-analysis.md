@@ -373,11 +373,11 @@ All decisions traceable to MeTTa knowledge base
 ## 🔗 Agent Communication
 
 ### Receives Messages From:
-- **Portfolio Monitor Agent** (`agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn`) - Portfolio snapshots for analysis
+- **Portfolio Monitor Agent** (`agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f`) - Portfolio snapshots for analysis
 
 ### Sends Messages To:
 - **Original Requester** - MeTTa-analyzed risk reports
-- **Alert Agent** (`agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun`) - High/critical risk alerts
+- **Alert Agent** (`agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l`) - High/critical risk alerts
 
 ## 🚀 Usage Example
 
@@ -416,7 +416,7 @@ async def request_analysis(ctx: Context):
     )
     
     await ctx.send(
-        "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun",
+        "agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l",
         request
     )
 
