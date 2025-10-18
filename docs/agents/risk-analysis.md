@@ -13,7 +13,7 @@ The **Risk Analysis Agent** is the intelligent decision-making core of DeFiGuard
 ## 🎯 Agent Details
 
 - **Agent Name**: `risk_analysis`
-- **Agent Address**: `agent1q2stpgsyl2h5dlpq7sfk47hfnjqsw84kf6m40defdfph65ftje4e56l5a0f`
+- **Agent Address**: `agent1qtrn82fz9tnspwudzrjr7mm9ncwvavjse5xcv7j9t06gajmdxq0yg38dyx5`
 - **Network**: Fetch.ai Testnet (Agentverse)
 - **AI Engine**: **SingularityNET MeTTa Knowledge Graphs**
 - **Knowledge Base**: 50+ assets, 25+ risk rules

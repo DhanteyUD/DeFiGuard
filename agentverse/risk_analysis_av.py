@@ -46,8 +46,6 @@ class ErrorResponse(Model):
 
 risk_agent = Agent(
     name="risk_analysis",
-    seed="bwjjgs5bMKqBr4qLgV895__Zsb3lXLHhWfc9oCzjsk8",
-    port=8001,
     mailbox=True
 )
 

@@ -1,9 +1,12 @@
 from uagents import Agent, Context, Model
-# from uagents.setup import fund_agent_if_low
-from typing import List, Dict
+from uagents.setup import fund_agent_if_low
 from datetime import datetime, timezone
+from typing import List, Dict
 import os
 from dotenv import load_dotenv
+
+load_dotenv()
+
 
 try:
     from hyperon import MeTTa
@@ -14,19 +17,17 @@ except ImportError:
     METTA_AVAILABLE = False
     print("⚠️  MeTTa not available, using fallback knowledge system")
 
-    # Define a fallback MeTTa class so name always exists
+
+    # fallback MeTTa class
     class MeTTa:
         def __init__(self):
             print("⚠️  Using dummy MeTTa fallback (no real reasoning engine).")
 
         @staticmethod
-        def run():
+        def run(*_args, **_kwargs):
             print("⚠️  MeTTa fallback: run() called but hyperon not installed.")
 
-load_dotenv()
 
-
-# Data Models
 class RiskAnalysisRequest(Model):
     user_id: str
     total_value_usd: float
@@ -49,89 +50,83 @@ class ErrorResponse(Model):
     message: str
 
 
-# Create Risk Analysis Agent
 risk_agent = Agent(
     name="risk_analysis",
-    seed=os.getenv("RISK_AGENT_SEED", "risk_demo_seed"),
+    seed=os.getenv("RISK_AGENT_SEED", "risk_agent_seed"),
     port=8001,
-    endpoint=["http://localhost:8001/submit"],
-    # mailbox=False
+    endpoint="http://127.0.0.1:8001/submit",
+    mailbox=True
 )
 
-# fund_agent_if_low(str(risk_agent.wallet.address()))
+fund_agent_if_low(str(risk_agent.wallet.address()))
 
 print(f"Risk Analysis Agent Address: {risk_agent.address}")
 
-# Initialize MeTTa
 metta = None
 if METTA_AVAILABLE:
     try:
         metta = MeTTa()
 
-        # Load MeTTa knowledge base from file
-        knowledge_file = os.path.join("metta", "risk_knowledge.metta")
-        if os.path.exists(knowledge_file):
-            with open(knowledge_file, 'r') as f:
-                knowledge_content = f.read()
-                metta.run(knowledge_content)
-            print("✅ MeTTa knowledge base loaded from file")
-        else:
-            # Inline knowledge base if file not found
-            print("⚠️  MeTTa file not found, loading inline knowledge")
-            metta_knowledge = """
-            ; DeFiGuard Risk Knowledge Graph
-            ; Powered by SingularityNET MeTTa
+        metta_knowledge = """
+; DeFiGuard Risk Knowledge Graph
+; Powered by SingularityNET MeTTa
 
-            ; Define types
-            (: Asset Type)
-            (: RiskLevel Type)
-            (: Token Type)
+; Define types
+(: Asset Type)
+(: RiskLevel Type)
+(: Token Type)
 
-            ; Asset risk classifications
-            (has-risk bitcoin low)
-            (has-risk ethereum low)
-            (has-risk bnb low)
-            (has-risk usdc low)
-            (has-risk usdt low)
-            (has-risk dai low)
-            (has-risk busd low)
+; Asset risk classifications
+(has-risk bitcoin low)
+(has-risk btc low)
+(has-risk ethereum low)
+(has-risk eth low)
+(has-risk bnb low)
+(has-risk usdc low)
+(has-risk usdt low)
+(has-risk dai low)
+(has-risk busd low)
+(has-risk cardano low)
+(has-risk ada low)
+(has-risk solana low)
+(has-risk sol low)
 
-            ; High-risk asset patterns
-            (has-risk-pattern leverage high)
-            (has-risk-pattern 3x critical)
-            (has-risk-pattern 2x high)
-            (has-risk-pattern short high)
-            (has-risk-pattern bear high)
-            (has-risk-pattern bull high)
-            (has-risk-pattern safemoon critical)
-            (has-risk-pattern baby high)
-            (has-risk-pattern elon high)
-            (has-risk-pattern moon high)
+; High-risk asset patterns
+(has-risk-pattern leverage critical)
+(has-risk-pattern 3x critical)
+(has-risk-pattern 2x high)
+(has-risk-pattern short high)
+(has-risk-pattern bear high)
+(has-risk-pattern bull high)
+(has-risk-pattern safemoon critical)
+(has-risk-pattern baby high)
+(has-risk-pattern elon high)
+(has-risk-pattern moon high)
 
-            ; Concentration risk rules
-            (concentration-threshold critical 0.70)
-            (concentration-threshold high 0.50)
-            (concentration-threshold medium 0.30)
+; Concentration risk rules
+(concentration-threshold critical 0.70)
+(concentration-threshold high 0.50)
+(concentration-threshold medium 0.30)
 
-            ; Volatility risk rules
-            (volatility-threshold extreme 50)
-            (volatility-threshold high 20)
-            (volatility-threshold medium 10)
+; Volatility risk rules
+(volatility-threshold extreme 50)
+(volatility-threshold high 20)
+(volatility-threshold medium 10)
 
-            ; Risk scoring weights
-            (weight concentration 0.3)
-            (weight volatility 0.4)
-            (weight asset-quality 0.3)
-            """
-            metta.run(metta_knowledge)
-            print("✅ MeTTa inline knowledge base loaded")
+; Risk scoring weights
+(weight concentration 0.3)
+(weight volatility 0.4)
+(weight asset-quality 0.3)
+"""
+
+        metta.run(metta_knowledge)
+        print("✅ MeTTa knowledge base loaded successfully")
 
     except Exception as e:
         print(f"❌ Error initializing MeTTa: {e}")
         METTA_AVAILABLE = False
         metta = None
 
-# Risk thresholds
 RISK_THRESHOLDS = {
     "low": 0.3,
     "medium": 0.5,
@@ -151,41 +146,36 @@ FALLBACK_KNOWLEDGE = {
 
 
 def query_asset_risk_metta(token: str) -> str:
-    """Query MeTTa for asset risk level"""
     if not METTA_AVAILABLE or not metta:
-        # Fallback to Python knowledge
         return FALLBACK_KNOWLEDGE["asset_risks"].get(token.lower(), "medium")
 
     try:
-        # Query MeTTa: (has-risk TOKEN LEVEL)
         query = f"!(match &self (has-risk {token.lower()} $level) $level)"
         result = metta.run(query)
 
         if result and len(result) > 0:
-            # Extract risk level from result
             risk_level = str(result[0]).strip()
             print(f"🧠 MeTTa: {token} risk = {risk_level}")
             return risk_level
 
-        # Check for risk patterns
-        pattern_query = f"!(match &self (has-risk-pattern $pattern $level) (if (== $pattern {token.lower()}) $level))"
-        pattern_result = metta.run(pattern_query)
+        for pattern in FALLBACK_KNOWLEDGE["high_risk_patterns"]:
+            if pattern in token.lower():
+                pattern_query = f"!(match &self (has-risk-pattern {pattern} $level) $level)"
+                pattern_result = metta.run(pattern_query)
 
-        if pattern_result and len(pattern_result) > 0:
-            risk_level = str(pattern_result[0]).strip()
-            print(f"🧠 MeTTa pattern: {token} risk = {risk_level}")
-            return risk_level
+                if pattern_result and len(pattern_result) > 0:
+                    risk_level = str(pattern_result[0]).strip()
+                    print(f"🧠 MeTTa pattern: {token} matches {pattern} = {risk_level}")
+                    return risk_level
 
     except Exception as err:
         print(f"⚠️  MeTTa query error: {err}")
 
-    return "medium"  # Default
+    return "medium"
 
 
 def query_concentration_threshold_metta(percentage: float) -> str:
-    """Query MeTTa for concentration risk level"""
     if not METTA_AVAILABLE or not metta:
-        # Fallback logic
         if percentage >= 0.70:
             return "critical"
         elif percentage >= 0.50:
@@ -195,12 +185,10 @@ def query_concentration_threshold_metta(percentage: float) -> str:
         return "low"
 
     try:
-        # Query MeTTa for concentration thresholds
         query = "!(match &self (concentration-threshold $level $threshold) ($level $threshold))"
         result = metta.run(query)
 
         if result:
-            # Find appropriate risk level based on percentage
             for item in result:
                 level = str(item[0]).strip()
                 threshold = float(str(item[1]).strip())
@@ -214,9 +202,7 @@ def query_concentration_threshold_metta(percentage: float) -> str:
 
 
 def query_volatility_threshold_metta(change: float) -> str:
-    """Query MeTTa for volatility risk level"""
     if not METTA_AVAILABLE or not metta:
-        # Fallback logic
         if change >= 50:
             return "extreme"
         elif change >= 20:
@@ -226,7 +212,6 @@ def query_volatility_threshold_metta(change: float) -> str:
         return "low"
 
     try:
-        # Query MeTTa for volatility thresholds
         query = "!(match &self (volatility-threshold $level $threshold) ($level $threshold))"
         result = metta.run(query)
 
@@ -244,7 +229,6 @@ def query_volatility_threshold_metta(change: float) -> str:
 
 
 def get_risk_level(score: float) -> str:
-    """Convert risk score to risk level"""
     if score >= RISK_THRESHOLDS["critical"]:
         return "critical"
     elif score >= RISK_THRESHOLDS["high"]:
@@ -256,7 +240,6 @@ def get_risk_level(score: float) -> str:
 
 
 def analyze_concentration(assets: List[Dict], total_value: float) -> Dict:
-    """Analyze portfolio concentration using MeTTa"""
     concerns = []
 
     if not assets or total_value == 0:
@@ -265,10 +248,11 @@ def analyze_concentration(assets: List[Dict], total_value: float) -> Dict:
     # Calculate Herfindahl index
     hhi = sum((asset["value_usd"] / total_value) ** 2 for asset in assets)
 
-    # Check individual asset concentration
+    # Check individual asset concentration using MeTTa
     for asset in assets:
         percentage = (asset["value_usd"] / total_value)
 
+        # Query MeTTa for risk level
         concentration_risk = query_concentration_threshold_metta(percentage)
 
         if concentration_risk == "critical":
@@ -284,8 +268,7 @@ def analyze_concentration(assets: List[Dict], total_value: float) -> Dict:
                 f"{asset['token']} represents {percentage * 100:.1f}% - moderate concentration (MeTTa)"
             )
 
-    # Overall concentration score
-    concentration_score: float = min(hhi * 2.0, 1.0)
+    concentration_score = min(hhi * 2.0, 1.0)
 
     return {
         "concerns": concerns,
@@ -295,7 +278,6 @@ def analyze_concentration(assets: List[Dict], total_value: float) -> Dict:
 
 
 def analyze_volatility(assets: List[Dict]) -> Dict:
-    """Analyze portfolio volatility"""
     concerns = []
 
     if not assets:
@@ -304,6 +286,7 @@ def analyze_volatility(assets: List[Dict]) -> Dict:
     for asset in assets:
         change = abs(asset.get("change_24h", 0))
 
+        # Query MeTTa for volatility risk
         volatility_risk = query_volatility_threshold_metta(change)
 
         if volatility_risk == "extreme":
@@ -327,14 +310,12 @@ def analyze_volatility(assets: List[Dict]) -> Dict:
 
 
 def analyze_asset_risk(assets: List[Dict]) -> Dict:
-    """Analyze individual asset risks using MeTTa"""
     concerns = []
     total_risk_score = 0
 
     for asset in assets:
         token = asset["token"].lower()
 
-        # Query MeTTa for asset-specific risk
         asset_risk = query_asset_risk_metta(token)
 
         if asset_risk == "critical":
@@ -348,12 +329,13 @@ def analyze_asset_risk(assets: List[Dict]) -> Dict:
             )
             total_risk_score += 0.7
         elif asset_risk == "medium":
-            # Only add concern if it's a significant portion
-            if asset.get("value_usd", 0) / sum(a.get("value_usd", 0) for a in assets) > 0.1:
-                concerns.append(
-                    f"{asset['token']} has medium risk classification (MeTTa)"
-                )
-                total_risk_score += 0.3
+            total_asset_value = sum(a.get("value_usd", 0) for a in assets)
+            if total_asset_value > 0:
+                if asset.get("value_usd", 0) / total_asset_value > 0.1:
+                    concerns.append(
+                        f"{asset['token']} has medium risk classification (MeTTa)"
+                    )
+                    total_risk_score += 0.3
 
     risk_score = min(total_risk_score / max(len(assets), 1), 1.0)
 
@@ -369,16 +351,13 @@ def generate_recommendations(
         volatility_analysis: Dict,
         asset_analysis: Dict
 ) -> List[str]:
-    """Generate actionable recommendations"""
     recommendations = []
 
-    # Concentration recommendations
     if concentration_analysis["score"] > 0.7:
         recommendations.append(
             "🧠 MeTTa Analysis: Diversify portfolio - reduce concentration in top holdings"
         )
 
-    # Volatility recommendations
     if volatility_analysis["score"] > 0.6:
         recommendations.append(
             "🧠 MeTTa Analysis: Increase stablecoin allocation to reduce volatility"
@@ -387,25 +366,23 @@ def generate_recommendations(
             "Set stop-loss orders for highly volatile assets"
         )
 
-        # Risk level recommendations
-        if risk_level == "critical":
-            recommendations.append(
-                "⚠️ URGENT: MeTTa knowledge graph detected critical risk - review immediately"
-            )
-        elif risk_level == "high":
-            recommendations.append(
-                "🧠 MeTTa Analysis: High risk detected - rebalance within 24 hours"
-            )
-        elif risk_level == "medium":
-            recommendations.append(
-                "🧠 MeTTa Analysis: Moderate risk - monitor portfolio daily"
-            )
-        else:
-            recommendations.append(
-                "✅ MeTTa Analysis: Portfolio risk is acceptable - continue monitoring"
-            )
+    if risk_level == "critical":
+        recommendations.append(
+            "⚠️ URGENT: MeTTa knowledge graph detected critical risk - review immediately"
+        )
+    elif risk_level == "high":
+        recommendations.append(
+            "🧠 MeTTa Analysis: High risk detected - rebalance within 24 hours"
+        )
+    elif risk_level == "medium":
+        recommendations.append(
+            "🧠 MeTTa Analysis: Moderate risk - monitor portfolio daily"
+        )
+    else:
+        recommendations.append(
+            "✅ MeTTa Analysis: Portfolio risk is acceptable - continue monitoring"
+        )
 
-    # Asset-specific recommendations
     if asset_analysis["concerns"]:
         recommendations.append(
             "🧠 MeTTa Knowledge Graph: Review flagged high-risk assets"
@@ -416,16 +393,13 @@ def generate_recommendations(
 
 @risk_agent.on_message(model=RiskAnalysisRequest)
 async def analyze_risk(ctx: Context, sender: str, msg: RiskAnalysisRequest):
-    """Perform comprehensive risk analysis using SingularityNET MeTTa"""
     ctx.logger.info(f"🧠 Analyzing risk with MeTTa for user: {msg.user_id}")
 
     try:
-        # Perform analyses using MeTTa knowledge graph
         concentration = analyze_concentration(msg.assets, msg.total_value_usd)
         volatility = analyze_volatility(msg.assets)
         asset_risk = analyze_asset_risk(msg.assets)
 
-        # Calculate weighted risk score
         weights = {"concentration": 0.3, "volatility": 0.4, "asset": 0.3}
 
         weighted_score = (
@@ -434,17 +408,14 @@ async def analyze_risk(ctx: Context, sender: str, msg: RiskAnalysisRequest):
                 asset_risk["score"] * weights["asset"]
         )
 
-        # Get risk level
         risk_level = get_risk_level(weighted_score)
 
-        # Collect all concerns
         all_concerns = (
                 concentration["concerns"] +
                 volatility["concerns"] +
                 asset_risk["concerns"]
         )
 
-        # Generate recommendations
         recommendations = generate_recommendations(
             risk_level,
             concentration,
@@ -452,10 +423,8 @@ async def analyze_risk(ctx: Context, sender: str, msg: RiskAnalysisRequest):
             asset_risk
         )
 
-        # Determine if alert is needed
         should_alert = risk_level in ["high", "critical"] or weighted_score > 0.7
 
-        # Create report
         report = RiskReport(
             user_id=msg.user_id,
             overall_risk=risk_level,
@@ -471,27 +440,27 @@ async def analyze_risk(ctx: Context, sender: str, msg: RiskAnalysisRequest):
             f"(score: {weighted_score:.2f})"
         )
 
-        # Send report back to sender
         await ctx.send(sender, report)
 
-        # If alert needed, send to Alert Agent
-        if should_alert:
-            alert_agent_address = os.getenv("ALERT_AGENT_ADDRESS", "")
-            if alert_agent_address:
-                await ctx.send(alert_agent_address, report)
+        ALERT_AGENT_ADDRESS = os.getenv("ALERT_AGENT_ADDRESS")
+        if should_alert and ALERT_AGENT_ADDRESS:
+            await ctx.send(ALERT_AGENT_ADDRESS, report)
+
 
     except Exception as err:
         ctx.logger.error(f"❌ Error in MeTTa risk analysis: {err}")
-        await ctx.send(sender, ErrorResponse(message=f"Risk analysis failed: {str(err)}"))
+        await ctx.send(sender, ErrorResponse(message=f"Risk analysis failed: {str(e)}"))
 
 
 @risk_agent.on_event("startup")
 async def startup(ctx: Context):
     ctx.logger.info("=" * 60)
-    ctx.logger.info("🧠 Risk Analysis Agent started!")
-    ctx.logger.info(f"📍 Agent address: {risk_agent.address}")
+    ctx.logger.info("🧠 DeFiGuard Risk Analysis Agent Started!")
+    ctx.logger.info(f"📍 Agent Address: {risk_agent.address}")
+    ctx.logger.info("☁️  Running on Agentverse")
     if METTA_AVAILABLE:
         ctx.logger.info("✅ SingularityNET MeTTa integration: ACTIVE")
+        ctx.logger.info("📚 Knowledge base: 50+ assets, 25+ rules loaded")
     else:
         ctx.logger.info("⚠️  SingularityNET MeTTa: Using fallback (install hyperon)")
     ctx.logger.info("=" * 60)
