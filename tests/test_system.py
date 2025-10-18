@@ -1,5 +1,5 @@
 """
-DeFiGuard System Integration Tests
+DeFiGuard Integration Tests
 Run these tests to verify all agents are working correctly
 """
 
@@ -47,7 +47,7 @@ MARKET_AGENT = os.getenv("MARKET_AGENT_ADDRESS", "")
 async def run_tests(ctx: Context):
     """Run comprehensive system tests"""
     ctx.logger.info("=" * 60)
-    ctx.logger.info("Starting DeFiGuard System Tests")
+    ctx.logger.info("Starting DeFiGuard Tests")
     ctx.logger.info("=" * 60)
 
     await asyncio.sleep(3)  # Wait for agents to be ready
@@ -149,7 +149,7 @@ async def handle_response(ctx: Context, sender: str, msg: GenericMessage):
 
 
 if __name__ == "__main__":
-    print("🧪 Starting DeFiGuard System Tests...")
+    print("🧪 Starting DeFiGuard Tests...")
     print(f"Test Agent Address: {test_agent.address}")
     print("\nMake sure all DeFiGuard agents are running!")
     print("Run 'python main.py' in another terminal first.\n")
