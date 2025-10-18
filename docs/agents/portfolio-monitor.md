@@ -12,7 +12,7 @@ The **Portfolio Monitor Agent** is the core data collection component of the DeF
 ## 🎯 Agent Details
 
 - **Agent Name**: `portfolio_monitor`
-- **Agent Address**: `agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn`
+- **Agent Address**: `agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f`
 - **Network**: Fetch.ai Testnet (Agentverse) 
 - **Status**: ✅ Active  
 - **Scan Interval**: 600 seconds (10 minutes)
