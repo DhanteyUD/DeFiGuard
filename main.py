@@ -47,7 +47,7 @@ def print_banner():
     print("\n  🚀 All agents initialized successfully!")
     print("  🌐 ASI:One Chat Protocol enabled on Alert Agent")
     print("  🧠 SingularityNET MeTTa integration: ACTIVE")
-    print(f"  📡 Bureau running on port 8888")
+    print(f"  📡 Bureau running on port 8080")
     print("\n" + "=" * 60 + "\n")
 
 
@@ -130,9 +130,9 @@ async def start_http_server():
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 8888)
+    site = web.TCPSite(runner, '0.0.0.0', 8080)
     await site.start()
-    logger.info("HTTP server started on port 8888")
+    logger.info("HTTP server started on port 8080")
 
 
 def main():
@@ -144,7 +144,7 @@ def main():
 
         bureau = Bureau(
             port=8888,
-            endpoint="http://0.0.0.0:8888/submit"
+            endpoint="http://0.0.0.0:8080/submit"
         )
 
         bureau.add(portfolio_agent)
@@ -156,8 +156,8 @@ def main():
         logger.info("🎯 Starting DeFiGuard Multi-Agent System...")
         logger.info("📡 Agents are now monitoring and ready to serve!")
         logger.info("💬 Interact with Alert Agent via ASI:One")
-        logger.info("🔗 Health check: http://localhost:8888/health")
-        logger.info("📊 Status: http://localhost:8888/status")
+        logger.info("🔗 Health check: http://localhost:8080/health")
+        logger.info("📊 Status: http://localhost:8080/status")
 
         loop = asyncio.get_event_loop()
         loop.create_task(start_http_server())
