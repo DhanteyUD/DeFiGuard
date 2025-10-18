@@ -376,7 +376,7 @@ async def scan_single_portfolio(ctx: Context, user_id: str):
     ctx.logger.info(f"📊 ${total_value:.2f}, Risk: {risk_score:.2%}")
 
     if total_value > 1.0:
-        RISK_AGENT_ADDRESS = "agent1q2stpgsyl2h5dlpq7sfk47hfnjqsw84kf6m40defdfph65ftje4e56l5a0f"
+        RISK_AGENT_ADDRESS = os.getenv("RISK_AGENT_ADDRESS")
         await ctx.send(RISK_AGENT_ADDRESS, snapshot)
 
     return snapshot
