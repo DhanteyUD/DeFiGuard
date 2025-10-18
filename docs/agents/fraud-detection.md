@@ -412,7 +412,7 @@ Recommendations:
 
 ### Sends Reports/Alerts To:
 - **Requesting Agent** - Fraud analysis report
-- **Alert System Agent** (`agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun`) - Critical fraud alerts (risk ≥80)
+- **Alert System Agent** (`agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l`) - Critical fraud alerts (risk ≥80)
 
 ---
 
@@ -447,7 +447,7 @@ async def analyze_token(ctx: Context):
     )
     
     await ctx.send(
-        "agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun",
+        "agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l",
         request
     )
 
