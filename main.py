@@ -12,8 +12,8 @@ import asyncio
 
 load_dotenv()
 
-PORT = int(os.getenv("PORT", 8888))
-HEALTH_PORT = PORT + 1
+HTTP_PORT = int(os.getenv("PORT", 8000))
+BUREAU_PORT = 8888
 
 logging.basicConfig(
     level=getattr(logging, os.getenv('LOG_LEVEL', 'INFO')),
@@ -34,7 +34,7 @@ def print_banner():
     ║                                                           ║
     ║           Multi-Agent Risk Management System              ║
     ║                Powered by ASI Alliance                    ║
-    ║                  Running in Docker 🐳                     ║
+    ║                  Running on Railway 🚂                    ║
     ║                                                           ║
     ╚═══════════════════════════════════════════════════════════╝
 
@@ -50,7 +50,8 @@ def print_banner():
     print("\n  🚀 All agents initialized successfully!")
     print("  🌐 ASI:One Chat Protocol enabled on Alert Agent")
     print("  🧠 SingularityNET MeTTa integration: ACTIVE")
-    print(f"  📡 Bureau running on port {PORT}")
+    print(f"  📡 HTTP Server on port {HTTP_PORT}")
+    print(f"  📡 Bureau running on port {BUREAU_PORT} (internal)")
     print("\n" + "=" * 60 + "\n")
 
 
@@ -64,6 +65,7 @@ def save_agent_addresses():
     }
 
     try:
+        os.makedirs('/app/data', exist_ok=True)
         with open('/app/data/agent_addresses.txt', 'w') as f:
             f.write("DeFiGuard Agent Addresses\n")
             f.write("=" * 50 + "\n\n")
@@ -84,7 +86,8 @@ async def health_check(_request):
             "market_data": market_agent.address,
             "fraud_detection": fraud_agent.address
         },
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "platform": "railway"
     })
 
 
@@ -94,79 +97,82 @@ async def agent_status(_request):
             {
                 "name": "Portfolio Monitor",
                 "address": portfolio_agent.address,
-                "port": 8000,
                 "status": "running"
             },
             {
                 "name": "Risk Analysis",
                 "address": risk_agent.address,
-                "port": 8001,
                 "status": "running"
             },
             {
                 "name": "Alert System",
                 "address": alert_agent.address,
-                "port": 8002,
                 "status": "running",
                 "chat_enabled": True
             },
             {
                 "name": "Market Data",
                 "address": market_agent.address,
-                "port": 8003,
                 "status": "running"
             },
             {
                 "name": "Fraud Detection",
                 "address": fraud_agent.address,
-                "port": 8004,
                 "status": "running"
             }
         ]
     })
 
 
+async def root_handler(_request):
+    return web.Response(text="DeFiGuard Multi-Agent System v1.0")
+
+
 async def start_http_server():
     app = web.Application()
+    app.router.add_get('/', root_handler)
     app.router.add_get('/health', health_check)
     app.router.add_get('/status', agent_status)
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', HEALTH_PORT)
+    site = web.TCPSite(runner, '0.0.0.0', HTTP_PORT)
     await site.start()
-    logger.info("✅ HTTP health server started on port 8000")
+    logger.info(f"✅ HTTP server started on port {HTTP_PORT}")
 
+
+async def run_bureau():
+    bureau = Bureau(
+        port=BUREAU_PORT,
+        endpoint=f"http://0.0.0.0:{BUREAU_PORT}/submit"
+    )
+
+    bureau.add(portfolio_agent)
+    bureau.add(risk_agent)
+    bureau.add(alert_agent)
+    bureau.add(market_agent)
+    bureau.add(fraud_agent)
+
+    logger.info("🎯 Starting DeFiGuard Multi-Agent System...")
+    logger.info("📡 Agents are now monitoring and ready to serve!")
+    logger.info("💬 Interact with Alert Agent via ASI:One")
+    logger.info(f"🔗 Health check: http://0.0.0.0:{HTTP_PORT}/health")
+    logger.info(f"📊 Status: http://0.0.0.0:{HTTP_PORT}/status")
+
+    bureau.run()
 
 
 def main():
-
     try:
         print_banner()
-
         save_agent_addresses()
 
-        bureau = Bureau(
-            port=PORT,
-            endpoint=f"http://0.0.0.0:{PORT}/submit"
-        )
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
-        bureau.add(portfolio_agent)
-        bureau.add(risk_agent)
-        bureau.add(alert_agent)
-        bureau.add(market_agent)
-        bureau.add(fraud_agent)
-
-        logger.info("🎯 Starting DeFiGuard Multi-Agent System...")
-        logger.info("📡 Agents are now monitoring and ready to serve!")
-        logger.info("💬 Interact with Alert Agent via ASI:One")
-        logger.info("🔗 Health check: http://localhost:8000/health")
-        logger.info("📊 Status: http://localhost:8000/status")
-
-        loop = asyncio.get_event_loop()
         loop.create_task(start_http_server())
 
-        bureau.run()
+        loop.run_until_complete(run_bureau())
 
     except KeyboardInterrupt:
         logger.info("\n⚠️  Shutting down DeFiGuard system...")
