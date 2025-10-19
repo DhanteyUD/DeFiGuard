@@ -139,11 +139,36 @@ async def agent_status(request):
     })
 
 
+async def submit_handler(request):
+    logger.info(f"Submit endpoint hit from {request.remote}")
+    try:
+        body = await request.json()
+        logger.debug(f"Received message: {body}")
+
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                    f"http://localhost:{BUREAU_PORT}/submit",
+                    json=body,
+                    headers={"Content-Type": "application/json"}
+            ) as resp:
+                result = await resp.json()
+                return web.json_response(result, status=resp.status)
+
+    except Exception as e:
+        logger.error(f"Error forwarding to bureau: {e}", exc_info=True)
+        return web.json_response(
+            {"error": str(e)},
+            status=500
+        )
+
+
 async def start_http_server():
     app = web.Application()
     app.router.add_get('/', root_handler)
     app.router.add_get('/health', health_check)
     app.router.add_get('/status', agent_status)
+    app.router.add_post('/submit', submit_handler)
 
     logger.info(f"🌐 Configuring HTTP server on 0.0.0.0:{HTTP_PORT}")
 
@@ -153,7 +178,7 @@ async def start_http_server():
     await site.start()
 
     logger.info(f"✅ HTTP server successfully started and listening on port {HTTP_PORT}")
-    logger.info(f"📍 Available routes: /, /health, /status")
+    logger.info(f"📍 Available routes: /, /health, /status, /submit")
 
     try:
         while True:
