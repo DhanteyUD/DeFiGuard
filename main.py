@@ -13,6 +13,7 @@ import asyncio
 load_dotenv()
 
 PORT = int(os.getenv("PORT", 8888))
+HEALTH_PORT = PORT + 1
 
 logging.basicConfig(
     level=getattr(logging, os.getenv('LOG_LEVEL', 'INFO')),
@@ -43,13 +44,13 @@ def print_banner():
 
     print(f"  ✓ Portfolio Monitor   : {portfolio_agent.address[:16]}...")
     print(f"  ✓ Risk Analysis       : {risk_agent.address[:16]}...")
-    print(f"  ✓ Alert Agent         : {alert_agent.address[:16]}...")
+    print(f"  ✓ Alert Agent        : {alert_agent.address[:16]}...")
     print(f"  ✓ Market Data         : {market_agent.address[:16]}...")
     print(f"  ✓ Fraud Detection     : {fraud_agent.address[:16]}...")
     print("\n  🚀 All agents initialized successfully!")
     print("  🌐 ASI:One Chat Protocol enabled on Alert Agent")
     print("  🧠 SingularityNET MeTTa integration: ACTIVE")
-    print(f"  📡 Bureau + HTTP server running on port {PORT}")
+    print(f"  📡 Bureau running on port {PORT}")
     print("\n" + "=" * 60 + "\n")
 
 
@@ -63,7 +64,6 @@ def save_agent_addresses():
     }
 
     try:
-        os.makedirs('/app/data', exist_ok=True)
         with open('/app/data/agent_addresses.txt', 'w') as f:
             f.write("DeFiGuard Agent Addresses\n")
             f.write("=" * 50 + "\n\n")
@@ -126,9 +126,24 @@ async def agent_status(_request):
     })
 
 
+async def start_http_server():
+    app = web.Application()
+    app.router.add_get('/health', health_check)
+    app.router.add_get('/status', agent_status)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', HEALTH_PORT)
+    await site.start()
+    logger.info("✅ HTTP health server started on port 8000")
+
+
+
 def main():
+
     try:
         print_banner()
+
         save_agent_addresses()
 
         bureau = Bureau(
@@ -143,23 +158,15 @@ def main():
         bureau.add(fraud_agent)
 
         logger.info("🎯 Starting DeFiGuard Multi-Agent System...")
+        logger.info("📡 Agents are now monitoring and ready to serve!")
         logger.info("💬 Interact with Alert Agent via ASI:One")
-        logger.info("🔗 Health: /health | Status: /status")
+        logger.info("🔗 Health check: http://localhost:8000/health")
+        logger.info("📊 Status: http://localhost:8000/status")
 
-        async def run_all():
-            app = web.Application()
-            app.router.add_get('/health', health_check)
-            app.router.add_get('/status', agent_status)
+        loop = asyncio.get_event_loop()
+        loop.create_task(start_http_server())
 
-            runner = web.AppRunner(app)
-            await runner.setup()
-            site = web.TCPSite(runner, '0.0.0.0', PORT)
-            await site.start()
-            logger.info(f"✅ HTTP + Agent server running on port {PORT}")
-
-            await asyncio.to_thread(bureau.run)
-
-        asyncio.run(run_all())
+        bureau.run()
 
     except KeyboardInterrupt:
         logger.info("\n⚠️  Shutting down DeFiGuard system...")
