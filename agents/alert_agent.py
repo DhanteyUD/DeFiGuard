@@ -63,8 +63,8 @@ alert_agent = Agent(
     name="alert_agent",
     seed=os.getenv("ALERT_AGENT_SEED", "alert_agent_seed"),
     port=8002,
-    endpoint="http://127.0.0.1:8002/submit",
-    mailbox=True,
+    endpoint=[os.getenv("ALERT_AGENT_ENDPOINT", "")],
+    mailbox=os.getenv("ALERT_AGENT_MAILBOX"),  # type: ignore
     publish_agent_details=True
 )
 
