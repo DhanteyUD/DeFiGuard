@@ -13,7 +13,7 @@ import asyncio
 load_dotenv()
 
 HTTP_PORT = int(os.getenv("PORT", 8000))
-BUREAU_PORT = 8888
+BUREAU_PORT = int(os.getenv("BUREAU_PORT", 8888))
 
 logging.basicConfig(
     level=getattr(logging, os.getenv('LOG_LEVEL', 'INFO')),
@@ -76,7 +76,21 @@ def save_agent_addresses():
         logger.error(f"Failed to save agent addresses: {e}")
 
 
-async def health_check(_request):
+async def root_handler(request):
+    logger.info(f"Root endpoint hit from {request.remote}")
+    return web.json_response({
+        "service": "DeFiGuard Multi-Agent System",
+        "version": "1.0.0",
+        "status": "running",
+        "endpoints": {
+            "health": "/health",
+            "status": "/status"
+        }
+    })
+
+
+async def health_check(request):
+    logger.info(f"Health check from {request.remote}")
     return web.json_response({
         "status": "healthy",
         "agents": {
@@ -91,7 +105,8 @@ async def health_check(_request):
     })
 
 
-async def agent_status(_request):
+async def agent_status(request):
+    logger.info(f"Status check from {request.remote}")
     return web.json_response({
         "agents": [
             {
@@ -124,135 +139,72 @@ async def agent_status(_request):
     })
 
 
-async def home(_request):
-    html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>DeFiGuard - Multi-Agent Risk Management</title>
-        <style>
-            body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                max-width: 800px;
-                margin: 50px auto;
-                padding: 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-            }
-            .container {
-                background: rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(10px);
-                border-radius: 15px;
-                padding: 30px;
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            }
-            h1 { margin-top: 0; font-size: 2.5em; }
-            .status { color: #4ade80; font-weight: bold; }
-            .endpoint {
-                background: rgba(0, 0, 0, 0.2);
-                padding: 10px;
-                border-radius: 5px;
-                margin: 10px 0;
-                font-family: monospace;
-            }
-            a { color: #60a5fa; text-decoration: none; }
-            a:hover { text-decoration: underline; }
-            .agent-list { margin: 20px 0; }
-            .agent { 
-                background: rgba(255, 255, 255, 0.05);
-                padding: 10px;
-                margin: 5px 0;
-                border-radius: 5px;
-                border-left: 3px solid #4ade80;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🛡️ DeFiGuard</h1>
-            <p class="status">✅ System Online</p>
-            <p>Multi-Agent Risk Management System powered by ASI Alliance</p>
-
-            <h2>📡 API Endpoints</h2>
-            <div class="endpoint">
-                <strong>Health Check:</strong> <a href="/health">/health</a>
-            </div>
-            <div class="endpoint">
-                <strong>Agent Status:</strong> <a href="/status">/status</a>
-            </div>
-
-            <h2>🤖 Active Agents</h2>
-            <div class="agent-list">
-                <div class="agent">📊 Portfolio Monitor</div>
-                <div class="agent">⚠️ Risk Analysis</div>
-                <div class="agent">🔔 Alert Agent (ASI:One Enabled)</div>
-                <div class="agent">📈 Market Data</div>
-                <div class="agent">🔍 Fraud Detection</div>
-            </div>
-
-            <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
-                🧠 Powered by SingularityNET MeTTa Integration
-            </p>
-        </div>
-    </body>
-    </html>
-    """
-    return web.Response(text=html, content_type='text/html')
-
-
 async def start_http_server():
     app = web.Application()
-    app.router.add_get('/', home)
+    app.router.add_get('/', root_handler)
     app.router.add_get('/health', health_check)
     app.router.add_get('/status', agent_status)
+
+    logger.info(f"🌐 Configuring HTTP server on 0.0.0.0:{HTTP_PORT}")
 
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', HTTP_PORT)
     await site.start()
-    logger.info(f"✅ HTTP server started on port {HTTP_PORT}")
 
-    while True:
-        await asyncio.sleep(3600)
+    logger.info(f"✅ HTTP server successfully started and listening on port {HTTP_PORT}")
+    logger.info(f"📍 Available routes: /, /health, /status")
+
+    try:
+        while True:
+            await asyncio.sleep(3600)
+    except asyncio.CancelledError:
+        logger.info("HTTP server shutting down...")
+        await runner.cleanup()
 
 
 async def run_bureau():
-    bureau = Bureau(
-        port=BUREAU_PORT,
-        endpoint=f"http://0.0.0.0:{BUREAU_PORT}/submit"
-    )
+    try:
+        bureau = Bureau(
+            port=BUREAU_PORT,
+            endpoint=f"http://0.0.0.0:{BUREAU_PORT}/submit"
+        )
 
-    bureau.add(portfolio_agent)
-    bureau.add(risk_agent)
-    bureau.add(alert_agent)
-    bureau.add(market_agent)
-    bureau.add(fraud_agent)
+        bureau.add(portfolio_agent)
+        bureau.add(risk_agent)
+        bureau.add(alert_agent)
+        bureau.add(market_agent)
+        bureau.add(fraud_agent)
 
-    logger.info("🎯 Starting DeFiGuard Multi-Agent System...")
-    logger.info("📡 Agents are now monitoring and ready to serve!")
-    logger.info("💬 Interact with Alert Agent via ASI:One")
-    logger.info(f"🔗 Health check: http://0.0.0.0:{HTTP_PORT}/health")
-    logger.info(f"📊 Status: http://0.0.0.0:{HTTP_PORT}/status")
+        logger.info("🎯 Starting DeFiGuard Multi-Agent System...")
+        logger.info("📡 Agents are now monitoring and ready to serve!")
+        logger.info("💬 Interact with Alert Agent via ASI:One")
 
-    # Use run_async() instead of run() to avoid event loop conflicts
-    await bureau.run_async()
+        await bureau.run_async()
+
+    except Exception as e:
+        logger.error(f"Bureau error: {e}", exc_info=True)
+        raise
 
 
 async def main_async():
-    try:
-        print_banner()
-        save_agent_addresses()
+    print_banner()
+    save_agent_addresses()
 
+    logger.info("=" * 60)
+    logger.info("🚀 Starting DeFiGuard services...")
+    logger.info(f"📡 HTTP Port: {HTTP_PORT} (Railway assigned)")
+    logger.info(f"📡 Bureau Port: {BUREAU_PORT} (internal)")
+    logger.info("=" * 60)
+
+    try:
         await asyncio.gather(
             start_http_server(),
-            run_bureau()
+            run_bureau(),
+            return_exceptions=False
         )
-
-    except KeyboardInterrupt:
-        logger.info("\n⚠️  Shutting down DeFiGuard system...")
-        logger.info("👋 All agents stopped. Goodbye!")
     except Exception as e:
-        logger.error(f"❌ Error starting DeFiGuard: {e}", exc_info=True)
+        logger.error(f"❌ Error in main loop: {e}", exc_info=True)
         raise
 
 
