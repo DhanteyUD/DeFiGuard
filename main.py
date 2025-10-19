@@ -163,6 +163,16 @@ async def submit_handler(request):
         )
 
 
+async def submit_info(_request):
+    return web.json_response({
+        "endpoint": "/submit",
+        "method": "POST",
+        "description": "Agent message submission endpoint for Agentverse",
+        "bureau_port": BUREAU_PORT,
+        "status": "ready"
+    })
+
+
 async def start_http_server():
     app = web.Application()
     app.router.add_get('/', root_handler)
