@@ -124,13 +124,85 @@ async def agent_status(_request):
     })
 
 
-async def root_handler(_request):
-    return web.Response(text="DeFiGuard Multi-Agent System v1.0")
+async def home(_request):
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>DeFiGuard - Multi-Agent Risk Management</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 800px;
+                margin: 50px auto;
+                padding: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .container {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                border-radius: 15px;
+                padding: 30px;
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            }
+            h1 { margin-top: 0; font-size: 2.5em; }
+            .status { color: #4ade80; font-weight: bold; }
+            .endpoint {
+                background: rgba(0, 0, 0, 0.2);
+                padding: 10px;
+                border-radius: 5px;
+                margin: 10px 0;
+                font-family: monospace;
+            }
+            a { color: #60a5fa; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+            .agent-list { margin: 20px 0; }
+            .agent { 
+                background: rgba(255, 255, 255, 0.05);
+                padding: 10px;
+                margin: 5px 0;
+                border-radius: 5px;
+                border-left: 3px solid #4ade80;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🛡️ DeFiGuard</h1>
+            <p class="status">✅ System Online</p>
+            <p>Multi-Agent Risk Management System powered by ASI Alliance</p>
+
+            <h2>📡 API Endpoints</h2>
+            <div class="endpoint">
+                <strong>Health Check:</strong> <a href="/health">/health</a>
+            </div>
+            <div class="endpoint">
+                <strong>Agent Status:</strong> <a href="/status">/status</a>
+            </div>
+
+            <h2>🤖 Active Agents</h2>
+            <div class="agent-list">
+                <div class="agent">📊 Portfolio Monitor</div>
+                <div class="agent">⚠️ Risk Analysis</div>
+                <div class="agent">🔔 Alert Agent (ASI:One Enabled)</div>
+                <div class="agent">📈 Market Data</div>
+                <div class="agent">🔍 Fraud Detection</div>
+            </div>
+
+            <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
+                🧠 Powered by SingularityNET MeTTa Integration
+            </p>
+        </div>
+    </body>
+    </html>
+    """
+    return web.Response(text=html, content_type='text/html')
 
 
 async def start_http_server():
     app = web.Application()
-    app.router.add_get('/', root_handler)
+    app.router.add_get('/', home)
     app.router.add_get('/health', health_check)
     app.router.add_get('/status', agent_status)
 
