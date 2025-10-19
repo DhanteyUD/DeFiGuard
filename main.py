@@ -140,6 +140,9 @@ async def start_http_server():
     await site.start()
     logger.info(f"✅ HTTP server started on port {HTTP_PORT}")
 
+    while True:
+        await asyncio.sleep(3600)
+
 
 async def run_bureau():
     bureau = Bureau(
@@ -159,26 +162,36 @@ async def run_bureau():
     logger.info(f"🔗 Health check: http://0.0.0.0:{HTTP_PORT}/health")
     logger.info(f"📊 Status: http://0.0.0.0:{HTTP_PORT}/status")
 
-    bureau.run()
+    # Use run_async() instead of run() to avoid event loop conflicts
+    await bureau.run_async()
 
 
-def main():
+async def main_async():
     try:
         print_banner()
         save_agent_addresses()
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        loop.create_task(start_http_server())
-
-        loop.run_until_complete(run_bureau())
+        await asyncio.gather(
+            start_http_server(),
+            run_bureau()
+        )
 
     except KeyboardInterrupt:
         logger.info("\n⚠️  Shutting down DeFiGuard system...")
         logger.info("👋 All agents stopped. Goodbye!")
     except Exception as e:
         logger.error(f"❌ Error starting DeFiGuard: {e}", exc_info=True)
+        raise
+
+
+def main():
+    try:
+        asyncio.run(main_async())
+    except KeyboardInterrupt:
+        logger.info("\n⚠️  Shutting down DeFiGuard system...")
+        logger.info("👋 All agents stopped. Goodbye!")
+    except Exception as e:
+        logger.error(f"❌ Fatal error: {e}", exc_info=True)
         raise
 
 
