@@ -9,6 +9,11 @@ import logging
 from dotenv import load_dotenv
 from aiohttp import web
 import asyncio
+import requests
+from uagents_core.utils.registration import (
+    register_chat_agent,
+    RegistrationRequestCredentials,
+)
 
 load_dotenv()
 
@@ -24,6 +29,40 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+AGENT_NAME = "DeFiGuard Alert Agent"
+AGENT_URL = "https://defiguard-production.up.railway.app/submit"
+
+
+def register_agent_if_needed():
+    try:
+        logger.info("🔍 Checking Agentverse registration...")
+
+        try:
+            res = requests.get("https://agentverse.ai/api/agents", timeout=10)
+            if AGENT_NAME in res.text:
+                logger.info("✅ Agent already registered. Skipping registration.")
+                return
+        except Exception:
+            logger.warning("⚠️ Could not verify existing registration. Proceeding anyway.")
+
+        logger.info("🧠 Registering agent with Agentverse...")
+
+        register_chat_agent(
+            AGENT_NAME,
+            AGENT_URL,
+            active=True,
+            credentials=RegistrationRequestCredentials(
+                agentverse_api_key=os.environ["AGENTVERSE_KEY"],
+                agent_seed_phrase=os.environ["AGENT_SEED_PHRASE"],
+            ),
+        )
+
+        logger.info("✅ Agent registered successfully!")
+        logger.info("🌍 Check Agentverse dashboard to confirm registration.")
+
+    except Exception as e:
+        logger.error(f"⚠️ Agent registration failed: {e}", exc_info=True)
 
 
 def print_banner():
@@ -157,20 +196,7 @@ async def submit_handler(request):
 
     except Exception as e:
         logger.error(f"Error forwarding to bureau: {e}", exc_info=True)
-        return web.json_response(
-            {"error": str(e)},
-            status=500
-        )
-
-
-async def submit_info(_request):
-    return web.json_response({
-        "endpoint": "/submit",
-        "method": "POST",
-        "description": "Agent message submission endpoint for Agentverse",
-        "bureau_port": BUREAU_PORT,
-        "status": "ready"
-    })
+        return web.json_response({"error": str(e)}, status=500)
 
 
 async def start_http_server():
@@ -187,8 +213,8 @@ async def start_http_server():
     site = web.TCPSite(runner, '0.0.0.0', HTTP_PORT)
     await site.start()
 
-    logger.info(f"✅ HTTP server successfully started and listening on port {HTTP_PORT}")
-    logger.info(f"📍 Available routes: /, /health, /status, /submit")
+    logger.info(f"✅ HTTP server started on port {HTTP_PORT}")
+    logger.info("📍 Available routes: /, /health, /status, /submit")
 
     try:
         while True:
@@ -200,10 +226,7 @@ async def start_http_server():
 
 async def run_bureau():
     try:
-        bureau = Bureau(
-            port=BUREAU_PORT,
-            endpoint=f"http://0.0.0.0:{BUREAU_PORT}/submit"
-        )
+        bureau = Bureau(port=BUREAU_PORT, endpoint=f"http://0.0.0.0:{BUREAU_PORT}/submit")
 
         bureau.add(portfolio_agent)
         bureau.add(risk_agent)
@@ -212,9 +235,6 @@ async def run_bureau():
         bureau.add(fraud_agent)
 
         logger.info("🎯 Starting DeFiGuard Multi-Agent System...")
-        logger.info("📡 Agents are now monitoring and ready to serve!")
-        logger.info("💬 Interact with Alert Agent via ASI:One")
-
         await bureau.run_async()
 
     except Exception as e:
@@ -225,6 +245,8 @@ async def run_bureau():
 async def main_async():
     print_banner()
     save_agent_addresses()
+
+    register_agent_if_needed()
 
     logger.info("=" * 60)
     logger.info("🚀 Starting DeFiGuard services...")
