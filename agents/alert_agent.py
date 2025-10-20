@@ -65,7 +65,6 @@ alert_agent = Agent(
     port=8002,
     endpoint=[os.getenv("DEFIGUARD_ENDPOINT", "")],
     mailbox=os.getenv("ALERT_AGENT_MAILBOX"), # type: ignore
-    publish_agent_details=True
 )
 
 fund_agent_if_low(str(alert_agent.wallet.address()))
