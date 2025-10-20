@@ -25,6 +25,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+class PingMessage(Model):
+    text: str
+    timestamp: str
+
+
 class AlertNotification(Model):
     user_id: str
     overall_risk: str
@@ -54,6 +59,29 @@ class ChatAckWrapper(Model):
     timestamp: str
 
 
+class InteractionPing(Model):
+    text: str
+    timestamp: str
+    interaction_id: str
+
+
+def log_interaction(ctx: Context, sender: str, message_type: str):
+    count = ctx.storage.get("total_interactions") or 0
+    count += 1
+    ctx.storage.set("total_interactions", count)
+
+    user_count = ctx.storage.get(f"user_interactions_{sender}") or 0
+    user_count += 1
+    ctx.storage.set(f"user_interactions_{sender}", user_count)
+
+    ctx.logger.info("🔔" * 25)
+    ctx.logger.info(f"📊 INTERACTION #{count}")
+    ctx.logger.info(f"👤 User: {sender[:8]}...")
+    ctx.logger.info(f"📝 Type: {message_type}")
+    ctx.logger.info(f"📈 User Total: {user_count}")
+    ctx.logger.info("🔔" * 25)
+
+
 client = OpenAI(
     base_url='https://api.asi1.ai/v1',
     api_key=os.getenv("ASI_ONE_API_KEY"),
@@ -64,7 +92,7 @@ alert_agent = Agent(
     seed=os.getenv("ALERT_AGENT_SEED", "alert_agent_seed"),
     port=8002,
     endpoint=[os.getenv("DEFIGUARD_ENDPOINT", "")],
-    mailbox=os.getenv("ALERT_AGENT_MAILBOX"), # type: ignore
+    mailbox=os.getenv("ALERT_AGENT_MAILBOX"),  # type: ignore
 )
 
 fund_agent_if_low(str(alert_agent.wallet.address()))
@@ -73,6 +101,21 @@ print(f"Alert Agent Address: {alert_agent.address}")
 print(f"Alert Agent Mailbox: {os.getenv('ALERT_AGENT_MAILBOX', 'Not configured')}")
 
 PORTFOLIO_AGENT_ADDRESS = os.getenv("PORTFOLIO_AGENT_ADDRESS")
+
+
+@alert_agent.on_message(model=InteractionPing)
+async def handle_interaction_ping(ctx: Context, sender: str, msg: InteractionPing):
+    log_interaction(ctx, sender, "InteractionPing")
+
+    await ctx.send(
+        sender,
+        InteractionPing(
+            text=f"Acknowledged: {msg.text}",
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            interaction_id=msg.interaction_id
+        )
+    )
+
 
 chat_proto = Protocol(spec=chat_protocol_spec)
 
@@ -534,8 +577,30 @@ async def handle_alert(ctx: Context, sender: str, msg: AlertNotification):
     await ctx.send(sender, Acknowledgement(message=f"Alert processed for {msg.user_id}"))
 
 
+def increment_interaction_count(ctx: Context, sender: str):
+    count = ctx.storage.get("total_interactions") or 0
+    count += 1
+    ctx.storage.set("total_interactions", count)
+
+    # Track per-user interactions
+    user_count = ctx.storage.get(f"interactions_{sender}") or 0
+    user_count += 1
+    ctx.storage.set(f"interactions_{sender}", user_count)
+
+    ctx.logger.info(f"📊 Total interactions: {count} | User {sender}: {user_count}")
+
+
 @chat_proto.on_message(ChatMessage)
 async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
+    log_interaction(ctx, sender, "ChatMessage")
+    increment_interaction_count(ctx, sender)
+
+    ctx.logger.info("=" * 50)
+    ctx.logger.info(f"[INTERACTION COUNT] Message from: {sender}")
+    ctx.logger.info(f"[INTERACTION COUNT] Message ID: {msg.msg_id}")
+    ctx.logger.info(f"[INTERACTION COUNT] Timestamp: {msg.timestamp}")
+    ctx.logger.info("=" * 50)
+
     ctx.logger.info(f"💬 Received chat message from {sender}")
 
     await ctx.send(
@@ -729,9 +794,9 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         "**Setup:**\n\n"
                         "`register <wallet> <chains>` \n\n"
                         "⌙ Register portfolio\n\n"
-                        
+
                         "---\n\n"
-                        
+
                         "**Monitoring:**\n\n"
 
                         "`status` \n\n"
@@ -786,6 +851,34 @@ async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledge
     ctx.logger.info(f"✓ Message {msg.acknowledged_msg_id} acknowledged by {sender}")
 
 
+@alert_agent.on_interval(period=300.0)
+async def log_status(ctx: Context):
+    total_interactions = ctx.storage.get("total_interactions") or 0
+    active_sessions = get_active_sessions(ctx)
+    all_alerts = get_all_alerts(ctx)
+
+    ctx.logger.info("=" * 50)
+    ctx.logger.info("📊 PERIODIC STATUS CHECK")
+    ctx.logger.info(f"Total interactions tracked: {total_interactions}")
+    ctx.logger.info(f"Active chat sessions: {len(active_sessions)}")
+    ctx.logger.info(f"Total alerts stored: {len(all_alerts)}")
+    ctx.logger.info("=" * 50)
+
+
+@alert_agent.on_message(model=PingMessage)
+async def handle_ping(ctx: Context, sender: str, msg: PingMessage):
+    ctx.logger.info(f"[INTERACTION] Ping from {sender}: {msg.text}")
+
+    await ctx.send(
+        sender,
+        PingMessage(
+            text=f"Pong: {msg.text}",
+            timestamp=datetime.now(timezone.utc).isoformat()
+        )
+    )
+    ctx.logger.info(f"✅ Interaction logged with {sender}")
+
+
 alert_agent.include(chat_proto, publish_manifest=True)
 
 
@@ -794,10 +887,16 @@ async def startup(ctx: Context):
     all_alerts = get_all_alerts(ctx)
     sessions = get_active_sessions(ctx)
 
+    mailbox_configured = bool(os.getenv('ALERT_AGENT_MAILBOX'))
+    endpoint_configured = bool(os.getenv('DEFIGUARD_ENDPOINT'))
+
     ctx.logger.info("=" * 70)
     ctx.logger.info("🚨 DeFiGuard AI Alert Agent Started!")
     ctx.logger.info(f"📍 Agent Address: {alert_agent.address}")
     ctx.logger.info(f"📫 Mailbox: {os.getenv('ALERT_AGENT_MAILBOX', 'Not configured')}")
+    ctx.logger.info(f"📫 Mailbox Status: {'✅ CONFIGURED' if mailbox_configured else '❌ NOT CONFIGURED'}")
+    ctx.logger.info(f"🌐 Endpoint: {os.getenv('DEFIGUARD_ENDPOINT', 'Not configured')}")
+    ctx.logger.info(f"🌐 Endpoint Status: {'✅ CONFIGURED' if endpoint_configured else '❌ NOT CONFIGURED'}")
     ctx.logger.info("☁️  Running on Agentverse")
     ctx.logger.info("💬 ASI:One Chat Protocol enabled ✓")
     ctx.logger.info("🤖 ASI-1 AI Integration enabled ✓")
@@ -805,6 +904,13 @@ async def startup(ctx: Context):
     ctx.logger.info(f"🔗 Supporting {len(SUPPORTED_CHAINS)} chains")
     ctx.logger.info(f"📊 Stored alerts: {len(all_alerts)}")
     ctx.logger.info(f"👥 Active sessions: {len(sessions)}")
+
+    ctx.logger.info("🧪 Testing message reception capability...")
+    if mailbox_configured:
+        ctx.logger.info("✅ Agent ready to receive messages")
+    else:
+        ctx.logger.error("❌ MAILBOX NOT CONFIGURED - Messages won't be received!")
+
     ctx.logger.info("=" * 70)
 
 
