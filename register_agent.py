@@ -6,6 +6,7 @@ from uagents_core.utils.registration import (
 
 # export AGENTVERSE_KEY="your-copied-key"
 # export AGENT_SEED_PHRASE="your-alert-agent-seed"
+# python register_agent.py
 
 register_chat_agent(
     "DeFiGuard Alert Agent",
