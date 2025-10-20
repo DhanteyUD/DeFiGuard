@@ -35,7 +35,7 @@ portfolio_agent = Agent(
     name="portfolio_monitor",
     seed=os.getenv("PORTFOLIO_AGENT_SEED", "portfolio_agent_seed"),
     port=8000,
-    endpoint="http://127.0.0.1:8000/submit",
+    endpoint=["https://defiguard-production.up.railway.app/submit"],
     mailbox=True
 )
 

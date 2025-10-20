@@ -38,7 +38,7 @@ market_agent = Agent(
     name="market_data",
     seed=os.getenv("MARKET_AGENT_SEED", "market_agent_seed"),
     port=8003,
-    endpoint="http://127.0.0.1:8003/submit",
+    endpoint=["https://defiguard-production.up.railway.app/submit"],
     mailbox=True
 )
 

@@ -54,7 +54,7 @@ risk_agent = Agent(
     name="risk_analysis",
     seed=os.getenv("RISK_AGENT_SEED", "risk_agent_seed"),
     port=8001,
-    endpoint="http://127.0.0.1:8001/submit",
+    endpoint=["https://defiguard-production.up.railway.app/submit"],
     mailbox=True
 )
 
