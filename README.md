@@ -162,14 +162,52 @@ Monitor crypto portfolios across 12 chains, analyze risks using SingularityNET M
 
 ## 🔗 Agent Addresses
 
-### Agentverse (Production)
+### Deployment Architecture
+
+#### **🐳 Docker Container (Railway Hosting)** 
+> All 5 agents run together in a single Docker container using Fetch.ai's Bureau framework, enabling efficient inter-agent communication and resource management.
+
+**☁️ Agentverse Registration**
+> Only the Alert Agent is registered on Agentverse to serve as the public-facing interface for ASI:One chat interactions.
+
+| Agent             | Address/Status                                                      | Deployment             |
+|-------------------|---------------------------------------------------------------------|------------------------|
+| Alert Agent       | `agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l` | ✅ Agentverse + Railway |
+| Portfolio Monitor | Internal (Bureau)                                                   | 🐳 Railway Container   |
+| Risk Analysis     | Internal (Bureau)                                                   | 🐳 Railway Container   |
+| Market Data       | Internal (Bureau)                                                   | 🐳 Railway Container   |
+| Fraud Detection   | Internal (Bureau)                                                   | 🐳 Railway Container   |
+
+**💡 Architecture Benefits:**
+- **Unified Deployment**: Single container simplifies DevOps and reduces hosting costs
+- **Low Latency**: Internal Bureau messaging eliminates network overhead between agents
+- **Single Entry Point**: Alert Agent handles all external communication via Agentverse
+- **Scalability**: Railway auto-scaling manages all agents together
+
+**🔌 How to Connect:**
+Users interact only with the Alert Agent address through ASI:One or Agentverse Chat. The Alert Agent coordinates with all internal agents automatically.
+
+#### Agentverse Cloud
+> Each agent hosted independently on Agentverse and communicate via the Fetch.ai network.
+
 | Agent             | Address                                                             | Status          |
 |-------------------|---------------------------------------------------------------------|-----------------|
-| Portfolio Monitor | `agent1qv3pywlds6n86hr55p7lpvncwtd22d25yfe82zjg5tgx325cg9dnqylzy6f` | ✅ Active        |
-| Risk Analysis     | `agent1qtrn82fz9tnspwudzrjr7mm9ncwvavjse5xcv7j9t06gajmdxq0yg38dyx5` | ✅ Active        |
-| Alert Agent       | `agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l` | ✅ Active + Chat |
-| Market Data       | `agent1qgwdvuucfhpvucqdru0gnrwc2zqf0ak5u24rvxua9flcazctmdvdsyrr8qq` | ✅ Active        |
-| Fraud Detection   | `agent1q0x3wcul6azlcu4wy5khce9hklav28ea9f8kjqcq649rs4jat5kc7zxarn6` | ✅ Active        |
+| Portfolio Monitor | `agent1qvyvw79t54ysq7rdp5xfc9qtqkycrnvtqlwjncrqfj3v8ne3dhzfvkjmdrn` | ✅ Active        |
+| Risk Analysis     | `agent1q2stpgsyl2h5dlpq7sfk47hfnjqsw84kf6m40defdfph65ftje4e56l5a0f` | ✅ Active        |
+| Alert Agent       | `agent1qwzszgd7h0knxwdj2j73htqswatm87t0ftsj4d3wlzlv54kftx5gyu8ygun` | ✅ Active + Chat |
+| Market Data       | `agent1qv7r47p6r8as5kw083fr36rjw4yjn3z59pe77x2hqeu7kgfh8leas7wxux8` | ✅ Active        |
+| Fraud Detection   | `agent1qvyvsyr93jp4detyrt7zy3hnvtrpu4jthy90nwv8uqpeunhywvdpgtglguc` | ✅ Active        |
+
+**💡 Independent Deployment Benefits:**
+- **Distributed Architecture**: Each agent runs in isolated Agentverse environments
+- **Network Communication**: Agents discover and message each other via Fetch.ai Almanac
+- **Individual Scaling**: Each agent can be updated/restarted independently
+- **No Single Point of Failure**: Redundancy through distributed hosting
+
+---
+
+**🔌 How to Connect:**
+Regardless of deployment mode, users interact only with the Alert Agent address (`agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l`) through ASI:One or Agentverse Chat. The Alert Agent coordinates with all other agents automatically.
 
 ---
 
