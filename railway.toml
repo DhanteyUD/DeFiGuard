@@ -2,4 +2,4 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python alert_agent.py"
+startCommand = "python main.py"
