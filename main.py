@@ -43,8 +43,8 @@ def register_agent_if_needed():
             if AGENT_NAME in res.text:
                 logger.info("✅ Agent already registered. Skipping registration.")
                 return
-        except Exception:
-            logger.warning("⚠️ Could not verify existing registration. Proceeding anyway.")
+        except requests.RequestException as e:
+            logger.warning(f"⚠️ Could not verify existing registration due to network error: {e}")
 
         logger.info("🧠 Registering agent with Agentverse...")
 
