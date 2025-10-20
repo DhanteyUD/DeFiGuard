@@ -629,7 +629,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                                 "\n".join(f"• {name}" for name in chain_names) +
                                 f"\n\n🛡️ AI-powered protection activated!\n\n"
                                 f"💬 Ask me: \"What should I know about my risk?\"\n\n"
-                                f"Or use\n\n `status` `history` `help`"
+                                f"Or use\n\n `status`\n\n `history`\n\n `help`"
                         )
                         await ctx.send(sender, create_text_chat(success_msg))
                         ctx.logger.info(f"✅ Portfolio registered for {sender}")
