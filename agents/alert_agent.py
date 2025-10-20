@@ -64,13 +64,13 @@ alert_agent = Agent(
     seed=os.getenv("ALERT_AGENT_SEED", "alert_agent_seed"),
     port=8002,
     endpoint=[os.getenv("ALERT_AGENT_ENDPOINT", "")],
-    mailbox=os.getenv("ALERT_AGENT_MAILBOX"),  # type: ignore
-    publish_agent_details=True
+    mailbox=os.getenv("ALERT_AGENT_MAILBOX") # type: ignore
 )
 
 fund_agent_if_low(str(alert_agent.wallet.address()))
 
 print(f"Alert Agent Address: {alert_agent.address}")
+print(f"Alert Agent Mailbox: {os.getenv('ALERT_AGENT_MAILBOX', 'Not configured')}")
 
 PORTFOLIO_AGENT_ADDRESS = os.getenv("PORTFOLIO_AGENT_ADDRESS")
 
@@ -797,6 +797,7 @@ async def startup(ctx: Context):
     ctx.logger.info("=" * 70)
     ctx.logger.info("🚨 DeFiGuard AI Alert Agent Started!")
     ctx.logger.info(f"📍 Agent Address: {alert_agent.address}")
+    ctx.logger.info(f"📫 Mailbox: {os.getenv('ALERT_AGENT_MAILBOX', 'Not configured')}")
     ctx.logger.info("☁️  Running on Agentverse")
     ctx.logger.info("💬 ASI:One Chat Protocol enabled ✓")
     ctx.logger.info("🤖 ASI-1 AI Integration enabled ✓")
