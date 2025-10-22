@@ -34,19 +34,70 @@ AGENT_NAME = "DeFiGuard Alert Agent"
 AGENT_URL = "https://defiguard-production.up.railway.app/submit"
 
 
-def register_agent_if_needed():
+def check_agent_status():
+    try:
+        headers = {
+            "Authorization": f"Bearer {os.environ['AGENTVERSE_KEY']}"
+        }
+
+        res = requests.get(
+            "https://agentverse.ai/api/agents",
+            headers=headers,
+            timeout=10
+        )
+
+        if res.status_code != 200:
+            logger.warning(f"Failed to fetch agents: {res.status_code}")
+            return False, "unknown"
+
+        agents = res.json()
+
+        for agent in agents.get("agents", []):
+            if agent.get("name") == AGENT_NAME:
+                is_active = agent.get("active", False)
+                logger.info(f"Found agent '{AGENT_NAME}' - Active: {is_active}")
+                return True, "active" if is_active else "inactive"
+
+        logger.info(f"Agent '{AGENT_NAME}' not found in Agentverse")
+        return False, "not_found"
+
+    except requests.RequestException as e:
+        logger.warning(f"Network error checking agent status: {e}")
+        return False, "error"
+    except Exception as e:
+        logger.error(f"Error checking agent status: {e}", exc_info=True)
+        return False, "error"
+
+
+def register_agent(force=False):
     try:
         logger.info("🔍 Checking Agentverse registration...")
 
-        try:
-            res = requests.get("https://agentverse.ai/api/agents", timeout=10)
-            if AGENT_NAME in res.text:
-                logger.info("✅ Agent already registered. Skipping registration.")
-                return
-        except requests.RequestException as e:
-            logger.warning(f"⚠️ Could not verify existing registration due to network error: {e}")
+        exists, status = check_agent_status()
 
-        logger.info("🧠 Registering agent with Agentverse...")
+        should_register = False
+
+        if not exists:
+            logger.info("📝 Agent not found. Will register new agent.")
+            should_register = True
+        elif status == "inactive":
+            logger.warning("⚠️  Agent exists but is INACTIVE. Will re-register.")
+            should_register = True
+        elif status == "active":
+            logger.info("✅ Agent already registered and ACTIVE.")
+            if force:
+                logger.info("🔄 Force flag set. Re-registering anyway.")
+                should_register = True
+        else:
+            logger.warning("⚠️  Unknown agent status. Will attempt registration.")
+            should_register = True
+
+        if not should_register:
+            return True
+
+        logger.info(f"🧠 Registering agent with Agentverse...")
+        logger.info(f"   Name: {AGENT_NAME}")
+        logger.info(f"   URL: {AGENT_URL}")
 
         register_chat_agent(
             AGENT_NAME,
@@ -58,11 +109,46 @@ def register_agent_if_needed():
             ),
         )
 
-        logger.info("✅ Agent registered successfully!")
-        logger.info("🌍 Check Agentverse dashboard to confirm registration.")
+        logger.info("✅ Agent registration successful!")
 
+        import time
+        time.sleep(2)
+        exists, status = check_agent_status()
+
+        if exists and status == "active":
+            logger.info("✅ Registration verified - Agent is ACTIVE")
+            return True
+        else:
+            logger.warning(f"⚠️  Registration completed but verification failed (status: {status})")
+            return False
+
+    except KeyError as e:
+        logger.error(f"❌ Missing environment variable: {e}")
+        logger.error("Please ensure AGENTVERSE_KEY and AGENT_SEED_PHRASE are set")
+        return False
     except Exception as e:
-        logger.error(f"⚠️ Agent registration failed: {e}", exc_info=True)
+        logger.error(f"❌ Agent registration failed: {e}", exc_info=True)
+        return False
+
+
+async def periodic_health_check():
+    check_interval = 300
+
+    while True:
+        try:
+            await asyncio.sleep(check_interval)
+
+            logger.info("🔍 Performing periodic agent health check...")
+            exists, status = check_agent_status()
+
+            if not exists or status == "inactive":
+                logger.warning(f"⚠️  Agent is {status}! Attempting re-registration...")
+                register_agent(force=True)
+            else:
+                logger.debug("✅ Agent health check passed")
+
+        except Exception as e:
+            logger.error(f"Error in periodic health check: {e}", exc_info=True)
 
 
 def print_banner():
@@ -123,7 +209,8 @@ async def root_handler(request):
         "status": "running",
         "endpoints": {
             "health": "/health",
-            "status": "/status"
+            "status": "/status",
+            "reregister": "/reregister"
         }
     })
 
@@ -146,6 +233,9 @@ async def health_check(request):
 
 async def agent_status(request):
     logger.info(f"Status check from {request.remote}")
+
+    exists, av_status = check_agent_status()
+
     return web.json_response({
         "agents": [
             {
@@ -162,7 +252,8 @@ async def agent_status(request):
                 "name": "Alert System",
                 "address": alert_agent.address,
                 "status": "running",
-                "chat_enabled": True
+                "chat_enabled": True,
+                "agentverse_status": av_status if exists else "not_registered"
             },
             {
                 "name": "Market Data",
@@ -174,8 +265,40 @@ async def agent_status(request):
                 "address": fraud_agent.address,
                 "status": "running"
             }
-        ]
+        ],
+        "agentverse": {
+            "registered": exists,
+            "status": av_status
+        }
     })
+
+
+async def reregister_handler(request):
+    logger.info(f"Manual re-registration triggered from {request.remote}")
+
+    try:
+        success = register_agent(force=True)
+
+        if success:
+            return web.json_response({
+                "success": True,
+                "message": "Agent re-registered successfully",
+                "agent_name": AGENT_NAME
+            })
+        else:
+            return web.json_response({
+                "success": False,
+                "message": "Re-registration attempted but may have failed. Check logs.",
+                "agent_name": AGENT_NAME
+            }, status=500)
+
+    except Exception as e:
+        logger.error(f"Error in manual re-registration: {e}", exc_info=True)
+        return web.json_response({
+            "success": False,
+            "message": f"Re-registration error: {str(e)}",
+            "agent_name": AGENT_NAME
+        }, status=500)
 
 
 async def submit_handler(request):
@@ -205,6 +328,7 @@ async def start_http_server():
     app.router.add_get('/health', health_check)
     app.router.add_get('/status', agent_status)
     app.router.add_post('/submit', submit_handler)
+    app.router.add_post('/reregister', reregister_handler)
 
     logger.info(f"🌐 Configuring HTTP server on 0.0.0.0:{HTTP_PORT}")
 
@@ -214,7 +338,7 @@ async def start_http_server():
     await site.start()
 
     logger.info(f"✅ HTTP server started on port {HTTP_PORT}")
-    logger.info("📍 Available routes: /, /health, /status, /submit")
+    logger.info("📍 Available routes: /, /health, /status, /submit, /reregister")
 
     try:
         while True:
@@ -246,18 +370,29 @@ async def main_async():
     print_banner()
     save_agent_addresses()
 
-    register_agent_if_needed()
+    # Wait for services to initialize before registering
+    logger.info("⏳ Waiting for services to initialize...")
+    await asyncio.sleep(3)
+
+    # Register agent with Agentverse
+    registration_success = register_agent()
+
+    if not registration_success:
+        logger.warning("⚠️  Initial registration failed, but continuing startup...")
+        logger.warning("⚠️  The system will retry registration in 5 minutes via health check")
 
     logger.info("=" * 60)
     logger.info("🚀 Starting DeFiGuard services...")
     logger.info(f"📡 HTTP Port: {HTTP_PORT} (Railway assigned)")
     logger.info(f"📡 Bureau Port: {BUREAU_PORT} (internal)")
+    logger.info("🔄 Periodic health checks: ENABLED (every 5 minutes)")
     logger.info("=" * 60)
 
     try:
         await asyncio.gather(
             start_http_server(),
             run_bureau(),
+            periodic_health_check(),
             return_exceptions=False
         )
     except Exception as e:
