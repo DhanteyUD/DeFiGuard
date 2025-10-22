@@ -32,7 +32,7 @@ Monitor crypto portfolios across 12 chains, analyze risks using SingularityNET M
 
 ## 🎥 Demo Video
 
-[▶️ Watch Demo (3-5 minutes)](YOUR_YOUTUBE_LINK_HERE)
+[▶️ Watch Demo (3-5 minutes)](https://www.youtube.com/watch?v=xyt-SBwxnIo)
 
 ---
 
@@ -437,7 +437,7 @@ python verify_metta.py
 ## 📞 Contact
 
 - **GitHub**: https://github.com/DhanteyUD/DeFiGuard
-- **Demo Video**: [YouTube Link](YOUR_LINK)
+- **Demo Video**: [YouTube Link](https://www.youtube.com/watch?v=xyt-SBwxnIo)
 - **ASI:One**: Search **`DeFiGuard Alert Agent`**
 - **Issues**: [GitHub Issues](https://github.com/DhanteyUD/DeFiGuard/issues)
 
