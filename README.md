@@ -87,6 +87,8 @@ Monitor crypto portfolios across 12 chains, analyze risks using SingularityNET M
 
 ## 🤖 Agents Overview
 
+<img width="3938" height="2188" alt="Untitled design" src="https://github.com/user-attachments/assets/a651aa5b-eca3-46be-b704-5de01ffffa18" />
+
 ### 1. Alert Agent (Chat Interface)
 **Address**: `agent1q2zusjcsgluu9pkkf9g2fn5lyqnaf9jqlhm3smlhvqcd6nct46ezy2qvm2l`
 
