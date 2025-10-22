@@ -32,7 +32,7 @@ Monitor crypto portfolios across 12 chains, analyze risks using SingularityNET M
 
 ## 🎥 Demo Video
 
-[▶️ Watch Demo (3-5 minutes)](https://www.youtube.com/watch?v=xyt-SBwxnIo)
+[▶️ Watch Demo (4 minutes)](https://www.youtube.com/watch?v=xyt-SBwxnIo)
 
 ---
 
