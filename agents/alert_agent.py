@@ -5,8 +5,7 @@ from uagents_core.contrib.protocols.chat import (
     ChatMessage,
     TextContent,
     StartSessionContent,
-    EndSessionContent,
-    chat_protocol_spec,
+    EndSessionContent
 )
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
@@ -116,8 +115,7 @@ async def handle_interaction_ping(ctx: Context, sender: str, msg: InteractionPin
         )
     )
 
-
-chat_proto = Protocol(spec=chat_protocol_spec)
+chat_proto = Protocol(name="ASI:One Chat Protocol", version="1.0.0")
 
 SUPPORTED_CHAINS = {
     "ethereum": "Ethereum",
