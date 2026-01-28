@@ -1,6 +1,7 @@
 ; ============================================
 ; DeFiGuard Risk Knowledge Graph
 ; Powered by SingularityNET MeTTa
+; Enhanced with Solana-specific rules
 ; ============================================
 
 ; Define types
@@ -8,9 +9,23 @@
 (: RiskLevel Type)
 (: Token Type)
 (: Threshold Type)
+(: Chain Type)
 
 ; ============================================
-; ASSET RISK CLASSIFICATIONS
+; CHAIN DEFINITIONS
+; ============================================
+
+(chain solana non-evm)
+(chain ethereum evm)
+(chain bsc evm)
+(chain polygon evm)
+(chain arbitrum evm)
+(chain optimism evm)
+(chain base evm)
+(chain avalanche evm)
+
+; ============================================
+; ASSET RISK CLASSIFICATIONS - EVM
 ; ============================================
 
 ; Low-risk assets (established cryptocurrencies)
@@ -21,10 +36,6 @@
 (has-risk bnb low)
 (has-risk cardano low)
 (has-risk ada low)
-(has-risk solana low)
-(has-risk sol low)
-(has-risk polkadot low)
-(has-risk dot low)
 
 ; Stablecoins (lowest risk)
 (has-risk usdc low)
@@ -44,7 +55,40 @@
 (has-risk crv medium)
 
 ; ============================================
-; HIGH-RISK ASSET PATTERNS
+; SOLANA-SPECIFIC ASSET CLASSIFICATIONS
+; ============================================
+
+; Solana Native (low risk)
+(has-risk solana low)
+(has-risk sol low)
+
+; Major Solana DeFi (medium risk)
+(has-risk raydium medium)
+(has-risk ray medium)
+(has-risk orca medium)
+(has-risk jupiter medium)
+(has-risk jup medium)
+(has-risk marinade medium)
+(has-risk mnde medium)
+(has-risk jito medium)
+(has-risk pyth medium)
+
+; Solana Liquid Staking (low-medium risk)
+(has-risk msol low)
+(has-risk jitosol low)
+(has-risk bsol medium)
+
+; Solana Meme Coins (high risk)
+(has-risk bonk high)
+(has-risk wif high)
+(has-risk dogwifhat high)
+(has-risk popcat high)
+(has-risk myro high)
+(has-risk wen high)
+(has-risk slerf critical)
+
+; ============================================
+; HIGH-RISK ASSET PATTERNS (ALL CHAINS)
 ; ============================================
 
 ; Leveraged tokens (critical risk)
@@ -68,11 +112,31 @@
 (has-risk-pattern doge high)
 (has-risk-pattern shib high)
 (has-risk-pattern inu high)
+(has-risk-pattern pepe high)
+(has-risk-pattern floki high)
 
 ; New/unverified tokens
 (has-risk-pattern new critical)
 (has-risk-pattern launch critical)
 (has-risk-pattern presale critical)
+(has-risk-pattern fair-launch high)
+
+; ============================================
+; SOLANA-SPECIFIC RISK PATTERNS
+; ============================================
+
+; Solana meme coin patterns
+(has-solana-risk-pattern cat high)
+(has-solana-risk-pattern dog high)
+(has-solana-risk-pattern pump critical)
+(has-solana-risk-pattern fun critical)
+(has-solana-risk-pattern ai-agent high)
+
+; Solana rug pull indicators
+(has-solana-risk-pattern mint-authority-active high)
+(has-solana-risk-pattern freeze-authority-active critical)
+(has-solana-risk-pattern no-metadata high)
+(has-solana-risk-pattern unverified high)
 
 ; ============================================
 ; CONCENTRATION RISK RULES
@@ -85,7 +149,7 @@
         (alert "Extreme concentration - critical risk")
         (action "Diversify immediately")))
 
-; High: Over 50% in single asset  
+; High: Over 50% in single asset
 (concentration-threshold high 0.50)
 (concentration-rule
     (if (> single-asset-percentage 0.50)
@@ -125,6 +189,46 @@
         (action "Normal for crypto - stay informed")))
 
 ; ============================================
+; SOLANA-SPECIFIC FRAUD RULES
+; ============================================
+
+; Mint authority checks
+(solana-fraud-rule
+    (if (mint-authority-not-revoked)
+        (alert "Mint authority ACTIVE - unlimited supply risk")
+        (risk-level high)
+        (action "Verify with team or avoid")))
+
+; Freeze authority checks
+(solana-fraud-rule
+    (if (freeze-authority-active)
+        (alert "Freeze authority ACTIVE - tokens can be frozen")
+        (risk-level critical)
+        (action "DO NOT INVEST - critical centralization risk")))
+
+; Holder concentration on Solana
+(solana-concentration-rule
+    (if (> top-holder-percent 0.50)
+        (alert "Top holder owns >50% - extreme rug pull risk")
+        (risk-level critical)))
+
+(solana-concentration-rule
+    (if (> top-holder-percent 0.30)
+        (alert "Top holder owns >30% - high concentration")
+        (risk-level high)))
+
+; Liquidity checks
+(solana-liquidity-rule
+    (if (< total-liquidity-usd 10000)
+        (alert "Very low liquidity - exit difficulty")
+        (risk-level high)))
+
+(solana-liquidity-rule
+    (if (no-liquidity-pools)
+        (alert "No liquidity pools found - cannot trade")
+        (risk-level critical)))
+
+; ============================================
 ; PORTFOLIO COMPOSITION RULES
 ; ============================================
 
@@ -138,89 +242,58 @@
         (alert "High exposure to risky assets")
         (recommend "Reduce high-risk allocation below 30%")))
 
+; Chain diversity for Solana portfolios
+(rule (solana-only-portfolio)
+    (if (and (= chains-count 1) (= chain solana))
+        (recommend "Consider diversifying to other chains")
+        (risk-adjustment +0.10)))
+
 ; ============================================
 ; RISK SCORING WEIGHTS
 ; ============================================
 
 ; Multi-factor risk calculation weights
-(weight concentration 0.3)
-(weight volatility 0.4)
-(weight asset-quality 0.3)
+(weight concentration 0.30)
+(weight volatility 0.35)
+(weight asset-quality 0.20)
+(weight chain-diversity 0.15)
+
+; Solana-specific weight adjustments
+(solana-weight mint-authority 0.25)
+(solana-weight freeze-authority 0.30)
+(solana-weight holder-concentration 0.25)
+(solana-weight liquidity 0.20)
 
 ; ============================================
-; MARKET CONDITION RULES
-; ============================================
-
-(market-condition
-    (if (and (< btc-dominance 0.40) (> market-cap 2000000000000))
-        (context "Altcoin season - higher risk/reward")
-        (recommendation "Diversification more important")))
-
-(market-condition
-    (if (and (> btc-dominance 0.60) (< market-cap 1000000000000))
-        (context "Bitcoin dominance - defensive posture")
-        (recommendation "Flight to quality - reduce altcoin exposure")))
-
-; ============================================
-; CORRELATION RISK
+; CROSS-CHAIN CORRELATION RULES
 ; ============================================
 
 (correlation-rule
-    (if (> asset-correlation 0.80)
-        (alert "High correlation between assets")
-        (recommendation "Limited true diversification")))
+    (if (and (has-asset solana) (has-asset ethereum))
+        (note "Cross-chain diversification detected")
+        (risk-adjustment -0.05)))
 
-; ============================================
-; LIQUIDITY RISK
-; ============================================
-
-(liquidity-rule
-    (if (< daily-volume 100000)
-        (alert "Low liquidity")
-        (risk-level high)))
-
-(liquidity-rule
-    (if (< daily-volume 10000)
-        (alert "Very low liquidity - exit difficulty")
-        (risk-level critical)))
-
-; ============================================
-; REBALANCING TRIGGERS
-; ============================================
-
-(rebalancing-rule
-    (if (> portfolio-drift 0.15)
-        (action "Rebalance recommended")
-        (priority medium)))
-
-(rebalancing-rule
-    (if (> portfolio-drift 0.25)
-        (action "Urgent rebalancing needed")
-        (priority high)))
-
-; ============================================
-; FRAUD/SCAM INDICATORS
-; ============================================
-
-(fraud-indicator honeypot critical)
-(fraud-indicator unverified-contract critical)
-(fraud-indicator no-liquidity-lock critical)
-(fraud-indicator ownership-not-renounced high)
-(fraud-indicator high-tax high)
+(correlation-rule
+    (if (> solana-meme-coins-percentage 0.20)
+        (alert "High Solana meme coin exposure")
+        (risk-adjustment +0.15)))
 
 ; ============================================
 ; KNOWLEDGE GRAPH METADATA
 ; ============================================
 
 ; Version and attribution
-(metadata version "1.0")
+(metadata version "2.0-solana")
 (metadata author "DeFiGuard")
 (metadata powered-by "SingularityNET MeTTa")
-(metadata last-updated "2025-10-12")
+(metadata last-updated "2025-01-27")
+(metadata solana-support true)
 
 ; Knowledge graph statistics
-(metadata total-assets 50)
-(metadata total-rules 25)
-(metadata risk-factors 10)
+(metadata total-assets 75)
+(metadata total-rules 40)
+(metadata risk-factors 15)
+(metadata supported-chains 13)
+(metadata solana-specific-rules 12)
 
-; End of DeFiGuard Risk Knowledge Graph
+; End of DeFiGuard Risk Knowledge Graph (Solana Enhanced)
