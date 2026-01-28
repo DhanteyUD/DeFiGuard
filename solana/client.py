@@ -220,7 +220,7 @@ class SolanaClient:
                         name=f"Unknown Token ({mint[:8]}...)",
                         balance=ui_amount,
                         decimals=decimals,
-                        value_usd=0,  # Can't price unknown tokens
+                        value_usd=0,
                         price=0,
                         change_24h=0,
                         risk_level="unknown"
