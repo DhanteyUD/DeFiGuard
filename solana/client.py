@@ -162,7 +162,7 @@ class SolanaClient:
         return 0, 0
 
     @staticmethod
-    def _get_token_info(_self, mint: str) -> Optional[Dict]:
+    def _get_token_info(mint: str) -> Optional[Dict]:
         for token_data in SOLANA_TOKENS.values():
             if token_data["mint"] == mint:
                 return token_data
