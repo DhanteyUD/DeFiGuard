@@ -1,6 +1,6 @@
 import aiohttp
 import asyncio
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
@@ -22,7 +22,7 @@ class SolanaFraudReport:
     risk_score: int  # 0-100
     findings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
-    metadata: Dict = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
     timestamp: str = ""
 
     def __post_init__(self):
@@ -50,7 +50,7 @@ class SolanaFraudDetector:
 
         findings = []
         risk_score = 0
-        metadata = {}
+        metadata: Dict[str, Any] = {}
 
         # Check 1: Mint Authority Status
         mint_info = await self._check_mint_authority(mint_address)
@@ -99,10 +99,10 @@ class SolanaFraudDetector:
             metadata=metadata
         )
 
-    async def _check_mint_authority(self, mint: str) -> Dict:
+    async def _check_mint_authority(self, mint: str) -> Dict[str, Any]:
         findings = []
         risk_score = 0
-        data = {}
+        data: Dict[str, Any] = {}
 
         try:
             authority_info = await self.client.check_mint_authority(mint)
@@ -133,10 +133,10 @@ class SolanaFraudDetector:
 
         return {"findings": findings, "risk_score": risk_score, "data": data}
 
-    async def _check_token_metadata(self, mint: str) -> Dict:
+    async def _check_token_metadata(self, mint: str) -> Dict[str, Any]:
         findings = []
         risk_score = 0
-        data = {"name": None, "symbol": None}
+        data: Dict[str, Optional[str]] = {"name": None, "symbol": None}
 
         for token_key, token_info in SOLANA_TOKENS.items():
             if token_info["mint"] == mint:
@@ -148,8 +148,8 @@ class SolanaFraudDetector:
         try:
             metadata = await self._fetch_token_metadata(mint)
             if metadata:
-                data["name"] = metadata.get("name", "Unknown")
-                data["symbol"] = metadata.get("symbol", "???")
+                data["name"] = metadata.get("name", "Unknown") or "Unknown"
+                data["symbol"] = metadata.get("symbol", "???") or "???"
 
                 name_lower = data["name"].lower() if data["name"] else ""
 
@@ -173,10 +173,11 @@ class SolanaFraudDetector:
 
         return {"findings": findings, "risk_score": risk_score, "data": data}
 
-    async def _fetch_token_metadata(self, mint: str) -> Optional[Dict]:
+    @staticmethod
+    async def _fetch_token_metadata(mint: str) -> Optional[Dict[str, Any]]:
         # Try Jupiter's token list (most comprehensive)
         try:
-            url = f"https://token.jup.ag/strict"
+            url = "https://token.jup.ag/strict"
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, timeout=10) as response:
                     if response.status == 200:
@@ -189,7 +190,7 @@ class SolanaFraudDetector:
                                     "decimals": token.get("decimals"),
                                     "verified": True
                                 }
-        except Exception:
+        except (asyncio.TimeoutError, aiohttp.ClientError, ValueError):
             pass
 
         # Try Solana token list
@@ -207,15 +208,15 @@ class SolanaFraudDetector:
                                     "decimals": token.get("decimals"),
                                     "verified": True
                                 }
-        except Exception:
+        except (asyncio.TimeoutError, aiohttp.ClientError, ValueError):
             pass
 
         return None
 
-    async def _check_holder_distribution(self, mint: str) -> Dict:
+    async def _check_holder_distribution(self, mint: str) -> Dict[str, Any]:
         findings = []
         risk_score = 0
-        data = {}
+        data: Dict[str, Any] = {}
 
         try:
             distribution = await self.client.get_holder_distribution(mint)
@@ -251,10 +252,10 @@ class SolanaFraudDetector:
 
         return {"findings": findings, "risk_score": risk_score, "data": data}
 
-    async def _check_liquidity(self, mint: str) -> Dict:
+    async def _check_liquidity(self, mint: str) -> Dict[str, Any]:
         findings = []
         risk_score = 0
-        data = {"pools_found": 0, "total_liquidity_usd": 0}
+        data: Dict[str, Any] = {"pools_found": 0, "total_liquidity_usd": 0}
 
         try:
             liquidity_info = await self._fetch_jupiter_liquidity(mint)
@@ -281,10 +282,11 @@ class SolanaFraudDetector:
 
         return {"findings": findings, "risk_score": risk_score, "data": data}
 
-    async def _fetch_jupiter_liquidity(self, mint: str) -> Optional[Dict]:
+    @staticmethod
+    async def _fetch_jupiter_liquidity(mint: str) -> Optional[Dict[str, Any]]:
         try:
             # Jupiter quote API to check if token is tradeable
-            url = f"https://quote-api.jup.ag/v6/quote"
+            url = "https://quote-api.jup.ag/v6/quote"
             params = {
                 "inputMint": mint,
                 "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",  # USDC
@@ -303,10 +305,10 @@ class SolanaFraudDetector:
                         }
                     else:
                         return {"pool_count": 0, "liquidity_usd": 0, "tradeable": False}
-        except Exception:
+        except (asyncio.TimeoutError, aiohttp.ClientError, ValueError):
             return None
 
-    async def _check_known_scams(self, mint: str) -> Dict:
+    async def _check_known_scams(self, mint: str) -> Dict[str, Any]:
         findings = []
         risk_score = 0
 
@@ -329,7 +331,8 @@ class SolanaFraudDetector:
 
         return {"findings": findings, "risk_score": risk_score, "data": {}}
 
-    async def _check_rugcheck(self, mint: str) -> Optional[Dict]:
+    @staticmethod
+    async def _check_rugcheck(mint: str) -> Optional[Dict[str, Any]]:
         try:
             url = f"https://api.rugcheck.xyz/v1/tokens/{mint}/report"
 
@@ -354,12 +357,13 @@ class SolanaFraudDetector:
                             "risk_level": risk_level,
                             "risks": risks
                         }
-        except Exception:
+        except (asyncio.TimeoutError, aiohttp.ClientError, ValueError):
             pass
 
         return None
 
-    def _calculate_risk_level(self, risk_score: int) -> str:
+    @staticmethod
+    def _calculate_risk_level(risk_score: int) -> str:
         if risk_score >= 80:
             return "critical"
         elif risk_score >= 60:
@@ -371,7 +375,8 @@ class SolanaFraudDetector:
         else:
             return "safe"
 
-    def _generate_recommendations(self, findings: List[str], risk_level: str) -> List[str]:
+    @staticmethod
+    def _generate_recommendations(findings: List[str], risk_level: str) -> List[str]:
         recommendations = []
 
         if risk_level == "critical":
