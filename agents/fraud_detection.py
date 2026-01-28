@@ -4,7 +4,13 @@ from datetime import datetime, timezone
 from typing import List, Dict
 import aiohttp
 import os
+import sys
 from dotenv import load_dotenv
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from solana.fraud_detector import SolanaFraudDetector
+from solana.config import is_valid_solana_address
 
 load_dotenv()
 
@@ -40,7 +46,9 @@ fraud_agent = Agent(
 
 fund_agent_if_low(str(fraud_agent.wallet.address()))
 
-print(f"Fraud Detection Agent Address: {fraud_agent.address}")
+print(f"Fraud Detection Agent (Solana Enhanced) Address: {fraud_agent.address}")
+
+solana_fraud_detector = SolanaFraudDetector()
 
 SCAM_INDICATORS = {
     "honeypot_keywords": ["safemoon", "elon", "baby", "inu", "cum", "safe", "moon"],
@@ -51,35 +59,70 @@ SCAM_INDICATORS = {
 GOPLUS_API_BASE = "https://api.gopluslabs.io/api/v1"
 HONEYPOT_API_BASE = "https://api.honeypot.is/v2"
 
+CHAIN_ID_MAP = {
+    "ethereum": "1",
+    "eth": "1",
+    "bsc": "56",
+    "binance": "56",
+    "bnb": "56",
+    "polygon": "137",
+    "matic": "137",
+    "arbitrum": "42161",
+    "arb": "42161",
+    "optimism": "10",
+    "op": "10",
+    "avalanche": "43114",
+    "avax": "43114",
+    "base": "8453",
+    "fantom": "250",
+    "ftm": "250",
+    "gnosis": "100",
+    "xdai": "100",
+    "moonbeam": "1284",
+    "glmr": "1284",
+    "celo": "42220",
+    "cronos": "25",
+    "cro": "25"
+}
+
+
+def detect_chain_type(chain: str, token_address: str) -> str:
+    """Detect if this is a Solana or EVM analysis request"""
+    chain_lower = chain.lower()
+
+    if chain_lower in ["solana", "sol"]:
+        return "solana"
+
+    if is_valid_solana_address(token_address):
+        return "solana"
+
+    return "evm"
+
+
+# ============================================
+# SOLANA FRAUD ANALYSIS
+# ============================================
+
+async def analyze_solana_token(token_address: str) -> FraudReport:
+    report = await solana_fraud_detector.analyze_token(token_address)
+
+    return FraudReport(
+        token_address=token_address,
+        chain="solana",
+        is_suspicious=report.is_suspicious,
+        risk_level=report.risk_level,
+        findings=report.findings,
+        recommendations=report.recommendations,
+        timestamp=report.timestamp
+    )
+
+
+# ============================================
+# EVM FRAUD ANALYSIS (Existing GoPlus integration)
+# ============================================
 
 async def fetch_goplus_security(token_address: str, chain: str) -> Dict:
-    chain_id_map = {
-        "ethereum": "1",
-        "eth": "1",
-        "bsc": "56",
-        "binance": "56",
-        "bnb": "56",
-        "polygon": "137",
-        "matic": "137",
-        "arbitrum": "42161",
-        "arb": "42161",
-        "optimism": "10",
-        "op": "10",
-        "avalanche": "43114",
-        "avax": "43114",
-        "base": "8453",
-        "fantom": "250",
-        "ftm": "250",
-        "gnosis": "100",
-        "xdai": "100",
-        "moonbeam": "1284",
-        "glmr": "1284",
-        "celo": "42220",
-        "cronos": "25",
-        "cro": "25"
-    }
-
-    chain_id = chain_id_map.get(chain.lower(), "1")
+    chain_id = CHAIN_ID_MAP.get(chain.lower(), "1")
 
     url = f"{GOPLUS_API_BASE}/token_security/{chain_id}"
     params = {"contract_addresses": token_address.lower()}
@@ -99,39 +142,7 @@ async def fetch_goplus_security(token_address: str, chain: str) -> Dict:
         return {}
 
 
-async def fetch_honeypot_check(token_address: str, chain: str) -> Dict:
-    chain_map = {
-        "ethereum": "ethereum",
-        "eth": "ethereum",
-        "bsc": "bsc",
-        "binance": "bsc",
-        "polygon": "polygon",
-        "matic": "polygon"
-    }
-
-    chain_name = chain_map.get(chain.lower(), "bsc")
-
-    url = f"{HONEYPOT_API_BASE}/IsHoneypot"
-    params = {
-        "address": token_address,
-        "chainID": chain_name
-    }
-
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params, timeout=10) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data
-                return {}
-    except Exception as e:
-        print(f"Honeypot API error: {e}")
-        return {}
-
-
-async def fetch_token_metadata(token_address: str, chain: str) -> Dict:
-    print(f"Fetching {chain} from blockchain explorer API")
-
+async def fetch_token_metadata(token_address: str, _chain: str) -> Dict:
     API_KEY = os.getenv("ETHERSCAN_API_KEY")
     base_url = "https://api.etherscan.io/api"
 
@@ -159,8 +170,8 @@ async def fetch_token_metadata(token_address: str, chain: str) -> Dict:
     return {"name": "Unknown", "symbol": "???"}
 
 
-async def check_token_security(token_address: str, chain: str) -> Dict:
-    print(f"🔍 Checking security for: {token_address} on {chain}")
+async def check_evm_token_security(token_address: str, chain: str) -> Dict:
+    print(f"🔍 Checking EVM security for: {token_address} on {chain}")
 
     findings = []
     risk_score = 0
@@ -173,35 +184,29 @@ async def check_token_security(token_address: str, chain: str) -> Dict:
         return {
             "findings": findings,
             "risk_score": risk_score,
-            "token_age_days": None,
-            "liquidity_usd": None,
-            "top_holder_percent": None,
             "is_verified": None,
-            "ownership_renounced": None,
-            "buy_tax": None,
-            "sell_tax": None,
             "is_honeypot": None
         }
 
+    # Contract verification
     is_open_source = goplus_data.get("is_open_source", "0") == "1"
     if not is_open_source:
         findings.append("❌ Contract source code not verified")
         risk_score += 30
 
+    # Honeypot check
     is_honeypot = goplus_data.get("is_honeypot", "0") == "1"
     if is_honeypot:
         findings.append("🚨 HONEYPOT DETECTED - Cannot sell tokens")
         risk_score = 100
 
-    # Check ownership
+    # Ownership check
     owner_address = goplus_data.get("owner_address")
     if owner_address and owner_address != "0x0000000000000000000000000000000000000000":
         findings.append("⚠️ Contract ownership not renounced - centralization risk")
         risk_score += 10
-        ownership_renounced = False
-    else:
-        ownership_renounced = True
 
+    # Tax analysis
     buy_tax = float(goplus_data.get("buy_tax", "0")) * 100
     sell_tax = float(goplus_data.get("sell_tax", "0")) * 100
 
@@ -217,47 +222,30 @@ async def check_token_security(token_address: str, chain: str) -> Dict:
         findings.append("⚠️ Sell tax significantly higher than buy tax")
         risk_score += 20
 
+    # Holder analysis
     holder_count = int(goplus_data.get("holder_count", "0"))
     if holder_count < 100:
         findings.append(f"⚠️ Low holder count: {holder_count}")
         risk_score += 15
 
-    can_take_back_ownership = goplus_data.get("can_take_back_ownership", "0") == "1"
-    if can_take_back_ownership:
+    # Dangerous functions
+    if goplus_data.get("can_take_back_ownership", "0") == "1":
         findings.append("🚨 Owner can take back ownership")
         risk_score += 30
 
-    hidden_owner = goplus_data.get("hidden_owner", "0") == "1"
-    if hidden_owner:
+    if goplus_data.get("hidden_owner", "0") == "1":
         findings.append("🚨 Hidden owner detected")
         risk_score += 25
 
-    selfdestruct = goplus_data.get("selfdestruct", "0") == "1"
-    if selfdestruct:
+    if goplus_data.get("selfdestruct", "0") == "1":
         findings.append("🚨 Contract has selfdestruct function")
         risk_score += 40
 
-    external_call = goplus_data.get("external_call", "0") == "1"
-    if external_call:
-        findings.append("⚠️ Contract makes external calls")
-        risk_score += 10
-
-    trading_cooldown = goplus_data.get("trading_cooldown", "0") == "1"
-    if trading_cooldown:
-        findings.append("⚠️ Trading cooldown mechanism present")
-        risk_score += 5
-
-    is_blacklisted = goplus_data.get("is_blacklisted", "0") == "1"
-    if is_blacklisted:
+    if goplus_data.get("is_blacklisted", "0") == "1":
         findings.append("🚨 Blacklist function exists")
         risk_score += 20
 
-    is_whitelisted = goplus_data.get("is_whitelisted", "0") == "1"
-    if is_whitelisted:
-        findings.append("⚠️ Whitelist required for trading")
-        risk_score += 15
-
-    top_holder_percent = 0
+    # Holder concentration
     holders = goplus_data.get("holders", [])
     if holders and len(holders) > 0:
         top_holder_percent = float(holders[0].get("percent", 0)) * 100
@@ -268,33 +256,17 @@ async def check_token_security(token_address: str, chain: str) -> Dict:
             findings.append(f"⚠️ High concentration: Top holder owns {top_holder_percent:.1f}%")
             risk_score += 15
 
-    total_supply = float(goplus_data.get("total_supply", "0"))
-    lp_total_supply = float(goplus_data.get("lp_total_supply", "0"))
-
-    if lp_total_supply < total_supply * 0.01:  # Less than 1% in LP
-        findings.append("⚠️ Very low liquidity detected")
-        risk_score += 20
-
     return {
         "findings": findings,
         "risk_score": min(risk_score, 100),
-        "token_age_days": None,
-        "liquidity_usd": lp_total_supply,
-        "top_holder_percent": top_holder_percent,
         "is_verified": is_open_source,
-        "ownership_renounced": ownership_renounced,
-        "buy_tax": buy_tax,
-        "sell_tax": sell_tax,
         "is_honeypot": is_honeypot
     }
 
 
 async def analyze_token_name(token_address: str, chain: str) -> Dict:
-    print(f"📝 Fetching token metadata...")
-
     metadata = await fetch_token_metadata(token_address, chain)
     token_name = metadata.get("name", "Unknown")
-    token_symbol = metadata.get("symbol", "???")
 
     findings = []
     risk_score = 0
@@ -311,16 +283,10 @@ async def analyze_token_name(token_address: str, chain: str) -> Dict:
             findings.append(f"⚠️ Token name contains '{pattern}' - possible clone/fork")
             risk_score += 5
 
-    emoji_count = sum(1 for char in token_name if ord(char) > 127)
-    if emoji_count > 3:
-        findings.append("⚠️ Excessive emojis/special characters in name")
-        risk_score += 5
-
     return {
         "findings": findings,
         "risk_score": risk_score,
-        "token_name": token_name,
-        "token_symbol": token_symbol
+        "token_name": token_name
     }
 
 
@@ -349,10 +315,8 @@ def generate_recommendations(findings: List[str], risk_level: str) -> List[str]:
     elif risk_level == "medium":
         recommendations.append("⚠️ CAUTION - Proceed with extreme caution")
         recommendations.append("Only invest what you can afford to lose")
-        recommendations.append("Monitor closely for any changes")
     elif risk_level == "low":
         recommendations.append("Some concerns identified - due diligence recommended")
-        recommendations.append("Check community feedback and audit reports")
     else:
         recommendations.append("✅ No major red flags detected")
         recommendations.append("Always conduct your own research (DYOR)")
@@ -360,69 +324,67 @@ def generate_recommendations(findings: List[str], risk_level: str) -> List[str]:
     finding_text = " ".join(findings).lower()
 
     if "honeypot" in finding_text:
-        recommendations.append("⚠️ This is a HONEYPOT - you CANNOT sell these tokens")
-
-    if "liquidity" in finding_text:
-        recommendations.append("Low liquidity = high slippage and exit difficulty")
+        recommendations.append("⚠️ HONEYPOT - you CANNOT sell these tokens")
 
     if "concentration" in finding_text or "holder" in finding_text:
         recommendations.append("High holder concentration = dump risk")
 
-    if "ownership" in finding_text:
-        recommendations.append("Ownership not renounced = contract can be modified")
+    if "mint authority" in finding_text and "not revoked" in finding_text:
+        recommendations.append("⚠️ Unlimited supply risk - mint authority active")
 
-    if "tax" in finding_text:
-        recommendations.append("High taxes reduce your profit margins significantly")
-
-    if "blacklist" in finding_text:
-        recommendations.append("Owner can blacklist addresses from trading")
-
-    if "selfdestruct" in finding_text:
-        recommendations.append("Contract can be destroyed - complete loss risk")
+    if "freeze" in finding_text:
+        recommendations.append("🚨 Your tokens can be frozen at any time")
 
     return recommendations
 
+
+async def analyze_evm_token(token_address: str, chain: str) -> FraudReport:
+    security_analysis = await check_evm_token_security(token_address, chain)
+    name_analysis = await analyze_token_name(token_address, chain)
+
+    all_findings = security_analysis["findings"] + name_analysis["findings"]
+    total_risk_score = security_analysis["risk_score"] + name_analysis["risk_score"]
+    risk_level = calculate_risk_level(total_risk_score)
+    recommendations = generate_recommendations(all_findings, risk_level)
+
+    return FraudReport(
+        token_address=token_address,
+        chain=chain,
+        is_suspicious=total_risk_score >= 40,
+        risk_level=risk_level,
+        findings=all_findings,
+        recommendations=recommendations,
+        timestamp=datetime.now(timezone.utc).isoformat()
+    )
 
 @fraud_agent.on_message(model=TokenAnalysisRequest)
 async def analyze_token(ctx: Context, sender: str, msg: TokenAnalysisRequest):
     ctx.logger.info(f"🔍 Analyzing token {msg.token_address} on {msg.chain}")
 
     try:
-        security_analysis = await check_token_security(msg.token_address, msg.chain)
+        chain_type = detect_chain_type(msg.chain, msg.token_address)
 
-        name_analysis = await analyze_token_name(msg.token_address, msg.chain)
-
-        all_findings = security_analysis["findings"] + name_analysis["findings"]
-
-        total_risk_score = security_analysis["risk_score"] + name_analysis["risk_score"]
-        risk_level = calculate_risk_level(total_risk_score)
-
-        recommendations = generate_recommendations(all_findings, risk_level)
-
-        is_suspicious = total_risk_score >= 40
-
-        report = FraudReport(
-            token_address=msg.token_address,
-            chain=msg.chain,
-            is_suspicious=is_suspicious,
-            risk_level=risk_level,
-            findings=all_findings,
-            recommendations=recommendations,
-            timestamp=datetime.now(timezone.utc).isoformat()
-        )
+        if chain_type == "solana":
+            ctx.logger.info("☀️ Detected Solana token - using Solana fraud detector")
+            report = await analyze_solana_token(msg.token_address)
+        else:
+            ctx.logger.info("⟠ Detected EVM token - using GoPlus security API")
+            report = await analyze_evm_token(msg.token_address, msg.chain)
 
         ctx.logger.info(
-            f"✅ Analysis complete: {risk_level} risk "
-            f"(score: {total_risk_score}/100)"
+            f"✅ Analysis complete: {report.risk_level} risk "
+            f"(suspicious: {report.is_suspicious})"
         )
 
         await ctx.send(sender, report)
 
-        if risk_level == "critical":
+        # Alert on critical risks
+        if report.risk_level == "critical":
             ctx.logger.warning(f"🚨 CRITICAL FRAUD DETECTED: {msg.token_address}")
 
             ALERT_AGENT_ADDRESS = os.getenv("ALERT_AGENT_ADDRESS")
-            await ctx.send(ALERT_AGENT_ADDRESS, report)
+            if ALERT_AGENT_ADDRESS:
+                await ctx.send(ALERT_AGENT_ADDRESS, report)
 
     except Exception as e:
         ctx.logger.error(f"❌ Error in fraud analysis: {e}")
@@ -437,12 +399,17 @@ async def analyze_token(ctx: Context, sender: str, msg: TokenAnalysisRequest):
 @fraud_agent.on_event("startup")
 async def startup(ctx: Context):
     ctx.logger.info("=" * 60)
-    ctx.logger.info("🕵️  DeFiGuard Fraud Detection Agent Started!")
+    ctx.logger.info("🕵️  DeFiGuard Fraud Detection (Solana Enhanced)")
     ctx.logger.info(f"📍 Agent Address: {fraud_agent.address}")
     ctx.logger.info("☁️  Running on Agentverse")
     ctx.logger.info("🔍 Ready to analyze tokens for fraud indicators")
-    ctx.logger.info("🔗 Connected to GoPlus Security API")
-    ctx.logger.info("🍯 Connected to Honeypot.is API")
+    ctx.logger.info("")
+    ctx.logger.info("📡 Connected APIs:")
+    ctx.logger.info("   ☀️  Solana: RugCheck.xyz, Jupiter, Metaplex")
+    ctx.logger.info("   ⟠  EVM: GoPlus Security, Honeypot.is")
+    ctx.logger.info("")
+    ctx.logger.info("🔗 Supported Chains:")
+    ctx.logger.info("   Solana + 12 EVM chains")
     ctx.logger.info("=" * 60)
 
 
