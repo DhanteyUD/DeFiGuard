@@ -2,15 +2,21 @@
 uagents==0.22.10
 uagents-ai-engine==0.10.0
 
-# MeTTa/Hyperon
+# MeTTa/Hyperon (SingularityNET)
 hyperon>=0.2.8
 
-# ASI:One Agent LLM (optional)
+# ASI:One Agent LLM
 openai==2.3.0
 
-# Web3 & Blockchain
+# Web3 & Blockchain - EVM
 web3==7.13.0
 cosmpy==0.11.1
+
+# Solana Integration (NEW)
+solana==0.34.0
+solders==0.21.0
+anchorpy==0.20.1
+base58==2.1.1
 
 # HTTP & Async
 aiohttp==3.13.0

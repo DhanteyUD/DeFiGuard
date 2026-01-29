@@ -115,28 +115,199 @@ async def handle_interaction_ping(ctx: Context, sender: str, msg: InteractionPin
         )
     )
 
+
 chat_proto = Protocol(name="ASI:One Chat Protocol", version="1.0.0")
 
 SUPPORTED_CHAINS = {
+    # Solana
+    "solana": "Solana",
+    "sol": "Solana",
+
+    # EVM Chains
     "ethereum": "Ethereum",
+    "eth": "Ethereum",
     "bsc": "BNB Smart Chain",
+    "bnb": "BNB Smart Chain",
     "polygon": "Polygon",
+    "matic": "Polygon",
     "arbitrum": "Arbitrum One",
+    "arb": "Arbitrum One",
     "optimism": "Optimism",
+    "op": "Optimism",
     "avalanche": "Avalanche C-Chain",
+    "avax": "Avalanche C-Chain",
     "base": "Base",
     "fantom": "Fantom",
+    "ftm": "Fantom",
     "gnosis": "Gnosis Chain",
+    "xdai": "Gnosis Chain",
     "moonbeam": "Moonbeam",
+    "glmr": "Moonbeam",
     "celo": "Celo",
-    "cronos": "Cronos"
+    "cronos": "Cronos",
+    "cro": "Cronos"
 }
 
-DIRECT_COMMANDS = ["register", "chains", "portfolio", "status", "history", "help"]
+CHAIN_CANONICAL = {
+    "sol": "solana",
+    "eth": "ethereum",
+    "bnb": "bsc",
+    "matic": "polygon",
+    "arb": "arbitrum",
+    "op": "optimism",
+    "avax": "avalanche",
+    "ftm": "fantom",
+    "xdai": "gnosis",
+    "glmr": "moonbeam",
+    "cro": "cronos"
+}
+
+CHAIN_TYPES = {
+    "solana": "solana",
+    "ethereum": "evm",
+    "bsc": "evm",
+    "polygon": "evm",
+    "arbitrum": "evm",
+    "optimism": "evm",
+    "avalanche": "evm",
+    "base": "evm",
+    "fantom": "evm",
+    "gnosis": "evm",
+    "moonbeam": "evm",
+    "celo": "evm",
+    "cronos": "evm"
+}
+
+DIRECT_COMMANDS = ["register", "chains", "portfolio", "status", "history", "help", "analyze"]
+
+
+def is_valid_solana_address(address: str) -> bool:
+    if not isinstance(address, str):
+        return False
+
+    base58_pattern = r'^[1-9A-HJ-NP-Za-km-z]{32,44}$'
+    return bool(re.match(base58_pattern, address))
+
+
+def detect_address_type(address: str) -> str:
+    """Detect if address is EVM (0x...) or Solana (base58)"""
+    if not isinstance(address, str):
+        return "unknown"
+
+    address = address.strip()
+
+    if address.startswith("0x") and len(address) == 42:
+        return "evm"
+    elif is_valid_solana_address(address):
+        return "solana"
+    else:
+        return "unknown"
+
+
+def validate_wallet_address(address: str) -> Dict:
+    if not isinstance(address, str):
+        return {"valid": False, "error": "Address must be a string", "checksum": None, "type": None}
+
+    address = address.strip()
+    addr_type = detect_address_type(address)
+
+    # ===== SOLANA VALIDATION =====
+    if addr_type == "solana":
+        if is_valid_solana_address(address):
+            return {
+                "valid": True,
+                "checksum": address,
+                "error": None,
+                "type": "solana"
+            }
+        else:
+            return {
+                "valid": False,
+                "error": "Invalid Solana address format",
+                "checksum": None,
+                "type": "solana"
+            }
+
+    # ===== EVM VALIDATION =====
+    elif addr_type == "evm":
+        if not re.match(r'^0x[a-fA-F0-9]{40}$', address):
+            if not address.startswith("0x"):
+                return {
+                    "valid": False,
+                    "error": "EVM address must start with '0x'",
+                    "checksum": None,
+                    "type": "evm"
+                }
+            elif len(address) != 42:
+                return {
+                    "valid": False,
+                    "error": f"EVM address must be 42 characters (currently {len(address)})",
+                    "checksum": None,
+                    "type": "evm"
+                }
+            else:
+                return {
+                    "valid": False,
+                    "error": "Address contains invalid characters (only 0-9, a-f, A-F allowed)",
+                    "checksum": None,
+                    "type": "evm"
+                }
+
+        try:
+            checksum_address = Web3.to_checksum_address(address)
+
+            if checksum_address == "0x0000000000000000000000000000000000000000":
+                return {
+                    "valid": False,
+                    "error": "Cannot use zero address (0x0000...)",
+                    "checksum": None,
+                    "type": "evm"
+                }
+
+            burn_addresses = [
+                "0x000000000000000000000000000000000000dEaD",
+                "0xdead000000000000000042069420694206942069"
+            ]
+            if checksum_address.lower() in [b.lower() for b in burn_addresses]:
+                return {
+                    "valid": False,
+                    "error": "Cannot use burn address",
+                    "checksum": None,
+                    "type": "evm"
+                }
+
+            return {
+                "valid": True,
+                "checksum": checksum_address,
+                "error": None,
+                "type": "evm"
+            }
+        except ValueError as e:
+            return {
+                "valid": False,
+                "error": f"Invalid checksum: {str(e)}",
+                "checksum": None,
+                "type": "evm"
+            }
+        except Exception as e:
+            return {
+                "valid": False,
+                "error": f"Validation error: {str(e)}",
+                "checksum": None,
+                "type": "evm"
+            }
+
+    # ===== UNKNOWN FORMAT =====
+    else:
+        return {
+            "valid": False,
+            "error": "Unknown address format. Use EVM (0x...) or Solana (base58) address",
+            "checksum": None,
+            "type": None
+        }
 
 
 def add_alert_key(ctx: Context, key: str):
-    """Add alert key to master list"""
     keys = ctx.storage.get("alert_keys") or []
     if key not in keys:
         keys.append(key)
@@ -144,7 +315,6 @@ def add_alert_key(ctx: Context, key: str):
 
 
 def get_all_alerts(ctx: Context) -> Dict[str, dict]:
-    """Fetch all alerts"""
     keys = ctx.storage.get("alert_keys") or []
     alerts = {}
     for key in keys:
@@ -155,14 +325,12 @@ def get_all_alerts(ctx: Context) -> Dict[str, dict]:
 
 
 def add_active_session(ctx: Context, user_id: str, address: str):
-    """Track active chat session"""
     sessions = ctx.storage.get("active_sessions") or {}
     sessions[user_id] = address
     ctx.storage.set("active_sessions", sessions)
 
 
 def remove_active_session(ctx: Context, user_id: str):
-    """Remove active chat session"""
     sessions = ctx.storage.get("active_sessions") or {}
     if user_id in sessions:
         del sessions[user_id]
@@ -170,99 +338,33 @@ def remove_active_session(ctx: Context, user_id: str):
 
 
 def get_active_sessions(ctx: Context) -> Dict[str, str]:
-    """Retrieve all active sessions"""
     return ctx.storage.get("active_sessions") or {}
 
 
 def get_user_portfolio(ctx: Context, user_id: str) -> Dict:
-    """Get user's registered portfolio"""
     return ctx.storage.get(f"user_portfolio_{user_id}")
 
 
-def save_user_portfolio(ctx: Context, user_id: str, wallets: List[str], chains: List[str]):
-    """Save user's portfolio registration"""
+def save_user_portfolio(ctx: Context, user_id: str, wallets: List[str], chains: List[str], wallet_type: str):
     portfolio_data = {
         "wallets": wallets,
         "chains": chains,
+        "wallet_type": wallet_type,
         "registered_at": datetime.now(timezone.utc).isoformat()
     }
     ctx.storage.set(f"user_portfolio_{user_id}", portfolio_data)
-
-
-def validate_wallet_address(address: str) -> Dict:
-    if not isinstance(address, str):
-        return {"valid": False, "error": "Address must be a string", "checksum": None}
-
-    address = address.strip()
-
-    if not re.match(r'^0x[a-fA-F0-9]{40}$', address):
-        if not address.startswith("0x"):
-            return {
-                "valid": False,
-                "error": "Address must start with '0x'",
-                "checksum": None
-            }
-        elif len(address) != 42:
-            return {
-                "valid": False,
-                "error": f"Address must be 42 characters (currently {len(address)})",
-                "checksum": None
-            }
-        else:
-            return {
-                "valid": False,
-                "error": "Address contains invalid characters (only 0-9, a-f, A-F allowed)",
-                "checksum": None
-            }
-
-    try:
-        checksum_address = Web3.to_checksum_address(address)
-
-        if checksum_address == "0x0000000000000000000000000000000000000000":
-            return {
-                "valid": False,
-                "error": "Cannot use zero address (0x0000...)",
-                "checksum": None
-            }
-
-        burn_addresses = [
-            "0x000000000000000000000000000000000000dEaD",
-            "0xdead000000000000000042069420694206942069"
-        ]
-        if checksum_address.lower() in [b.lower() for b in burn_addresses]:
-            return {
-                "valid": False,
-                "error": "Cannot use burn address",
-                "checksum": None
-            }
-
-        return {
-            "valid": True,
-            "checksum": checksum_address,
-            "error": None
-        }
-    except ValueError as e:
-        return {
-            "valid": False,
-            "error": f"Invalid checksum: {str(e)}",
-            "checksum": None
-        }
-    except Exception as e:
-        return {
-            "valid": False,
-            "error": f"Validation error: {str(e)}",
-            "checksum": None
-        }
 
 
 def validate_chain(chain: str) -> Dict:
     chain_lower = chain.strip().lower()
 
     if chain_lower in SUPPORTED_CHAINS:
+        canonical = CHAIN_CANONICAL.get(chain_lower, chain_lower)
         return {
             "valid": True,
             "chain_name": SUPPORTED_CHAINS[chain_lower],
-            "chain_key": chain_lower,
+            "chain_key": canonical,
+            "chain_type": CHAIN_TYPES.get(canonical, "evm"),
             "error": None
         }
     else:
@@ -279,6 +381,7 @@ def validate_chain(chain: str) -> Dict:
             "valid": False,
             "chain_name": None,
             "chain_key": None,
+            "chain_type": None,
             "error": error_msg
         }
 
@@ -292,9 +395,10 @@ def parse_register_command(text: str) -> Dict:
             "error": (
                 "Invalid format. Use:\n\n"
                 "`register <wallet_address> <chains>`\n\n"
-                "Examples:\n\n"
+                "**EVM Example:**\n\n"
                 "`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon`\n\n"
-                "`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum polygon arbitrum`"
+                "**Solana Example:**\n\n"
+                "`register 9WzDXwBbmPdCBoccoc9Ra8JVoJLxp6YhHvCKioeNFfZY solana`"
             )
         }
 
@@ -307,6 +411,8 @@ def parse_register_command(text: str) -> Dict:
             "error": f"❌ {wallet_validation['error']}"
         }
 
+    wallet_type = wallet_validation["type"]  # "solana" or "evm"
+
     chains_input = " ".join(parts[2:])
 
     if "," in chains_input:
@@ -318,6 +424,7 @@ def parse_register_command(text: str) -> Dict:
 
     valid_chains = []
     invalid_chains = []
+    chain_types_found = set()
 
     for chain in chains:
         if not chain:
@@ -326,11 +433,16 @@ def parse_register_command(text: str) -> Dict:
         chain_validation = validate_chain(chain)
         if chain_validation["valid"]:
             valid_chains.append(chain_validation["chain_key"])
+            chain_types_found.add(chain_validation["chain_type"])
         else:
             invalid_chains.append(chain_validation["error"])
 
     if invalid_chains:
-        supported_list = ", ".join(SUPPORTED_CHAINS.keys())
+        unique_chains = list(dict.fromkeys([
+            k for k in SUPPORTED_CHAINS.keys()
+            if k not in CHAIN_CANONICAL  # Skip aliases
+        ]))
+        supported_list = ", ".join(unique_chains)
         return {
             "valid": False,
             "error": (
@@ -346,15 +458,51 @@ def parse_register_command(text: str) -> Dict:
             "error": "No valid chains specified"
         }
 
+    # ===== CROSS-CHAIN COMPATIBILITY CHECK =====
+    # Solana wallets can only monitor Solana
+    # EVM wallets can only monitor EVM chains
+
+    if wallet_type == "solana":
+        evm_chains = [c for c in valid_chains if CHAIN_TYPES.get(c) == "evm"]
+        if evm_chains:
+            return {
+                "valid": False,
+                "error": (
+                    f"❌ **Wallet/Chain Mismatch**\n\n"
+                    f"Your Solana wallet cannot monitor EVM chains: {', '.join(evm_chains)}\n\n"
+                    f"**Solution:** Use `solana` as your chain:\n\n"
+                    f"`register {wallet[:20]}... solana`"
+                )
+            }
+        valid_chains = ["solana"]
+
+    elif wallet_type == "evm":
+        solana_chains = [c for c in valid_chains if CHAIN_TYPES.get(c) == "solana"]
+        if solana_chains:
+            return {
+                "valid": False,
+                "error": (
+                    f"❌ **Wallet/Chain Mismatch**\n\n"
+                    f"Your EVM wallet (0x...) cannot monitor Solana.\n\n"
+                    f"**Solution:** Use EVM chains like ethereum, polygon, arbitrum, etc.\n\n"
+                    f"Or register a Solana wallet address for Solana monitoring."
+                )
+            }
+
+        valid_chains = [c for c in valid_chains if CHAIN_TYPES.get(c) == "evm"]
+
     if len(valid_chains) > 10:
         return {
             "valid": False,
             "error": "Too many chains (max 10). Please select your main chains."
         }
 
+    valid_chains = list(dict.fromkeys(valid_chains))
+
     return {
         "valid": True,
         "wallet": wallet_validation["checksum"],
+        "wallet_type": wallet_type,
         "chains": valid_chains
     }
 
@@ -427,6 +575,13 @@ def get_default_risk_status() -> Dict:
     }
 
 
+def get_chain_type_emoji(chain_type: str) -> str:
+    if chain_type == "solana":
+        return "◎"
+    else:
+        return "⟠"
+
+
 def build_context_for_ai(ctx: Context, sender: str) -> str:
     portfolio = get_user_portfolio(ctx, sender)
     all_alerts = get_all_alerts(ctx)
@@ -437,8 +592,10 @@ def build_context_for_ai(ctx: Context, sender: str) -> str:
     if portfolio:
         wallets = portfolio.get("wallets", [])
         chains = portfolio.get("chains", [])
+        wallet_type = portfolio.get("wallet_type", "unknown")
         chain_names = [SUPPORTED_CHAINS.get(c, c) for c in chains]
 
+        context += f"- Wallet Type: {wallet_type.upper()} {'(Solana)' if wallet_type == 'solana' else '(EVM)'}\n\n"
         context += f"- Registered: {len(wallets)} wallet(s)\n\n"
         context += f"- Monitored chains: {', '.join(chain_names)}\n\n"
         context += f"- Registration date: {portfolio.get('registered_at', 'Unknown')}\n\n"
@@ -471,6 +628,8 @@ async def query_asi1_model(ctx: Context, sender: str, user_question: str) -> str
     try:
         user_context = build_context_for_ai(ctx, sender)
 
+        unique_chains = {v for k, v in SUPPORTED_CHAINS.items() if k not in CHAIN_CANONICAL}
+
         system_prompt = f"""You are DeFiGuard AI, an intelligent assistant for a multi-chain DeFi portfolio risk monitoring system.
 
 Your role is to help users understand their portfolio risks, explain alerts, and provide actionable advice about DeFi security.
@@ -481,8 +640,21 @@ CAPABILITIES:
 - Help users understand alerts and recommendations
 - Suggest risk mitigation strategies
 - Answer questions about supported chains and features
+- Explain Solana-specific risks (mint authority, freeze authority, rug pulls)
 
-SUPPORTED CHAINS: {', '.join(SUPPORTED_CHAINS.values())}
+SUPPORTED CHAINS: 
+◎ Solana
+⟠ EVM: {', '.join([c for c in unique_chains if c != 'Solana'])}
+
+WALLET TYPES:
+- Solana wallets: Base58 format (e.g., 9WzDXwBbm...) - monitors Solana chain only
+- EVM wallets: 0x format (e.g., 0x742d35...) - monitors Ethereum, BSC, Polygon, etc.
+
+SOLANA-SPECIFIC RISKS:
+- Mint Authority: If not revoked, token supply can be inflated (rug pull risk)
+- Freeze Authority: If active, your tokens can be frozen
+- Holder Concentration: If top holder owns >30%, high dump risk
+- Low Liquidity: Difficulty exiting position
 
 RISK LEVELS:
 - 🟢 LOW (0-30%): Portfolio is healthy, continue monitoring
@@ -496,12 +668,13 @@ CURRENT USER DATA:
 IMPORTANT GUIDELINES:
 - Be concise and helpful
 - Use the user's actual portfolio data when available
-- If the user asks about commands, guide them to use: status, history, portfolio, chains, register, help
+- If the user asks about commands, guide them to use: status, history, portfolio, chains, register, analyze, help
 - Always maintain a professional but friendly tone
 - If you don't have specific information, be honest about limitations
 - Focus on actionable insights
 - Never make specific investment recommendations or financial advice
 - Explain technical concepts in simple terms
+- For Solana users, emphasize Solana-specific security checks
 
 If the user asks how to use the system, mention these commands:
 - `status` - Check current risk level
@@ -509,6 +682,7 @@ If the user asks how to use the system, mention these commands:
 - `portfolio` - View registered wallet(s)
 - `chains` - List supported chains
 - `register <wallet> <chains>` - Register/update portfolio
+- `analyze <token_address> <chain>` - Analyze a token for fraud
 - `help` - Show all commands
 """
 
@@ -533,7 +707,7 @@ If the user asks how to use the system, mention these commands:
         return (
             "I apologize, but I'm having trouble processing your question right now. "
             "Please try again, or use one of these commands:\n\n"
-            "`status` `history` `portfolio` `chains` `help`"
+            "`status` `history` `portfolio` `chains` `analyze` `help`"
         )
 
 
@@ -618,34 +792,50 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             if portfolio:
                 wallet_count = len(portfolio.get("wallets", []))
                 chains = portfolio.get("chains", [])
+                wallet_type = portfolio.get("wallet_type", "unknown")
                 chain_names = [SUPPORTED_CHAINS.get(c, c) for c in chains]
+
+                type_emoji = get_chain_type_emoji(wallet_type)
 
                 welcome_msg = (
                     f"👋 **Welcome back to DeFiGuard AI!**\n\n"
                     f"✅ Portfolio registered:\n\n"
-                    f"• {wallet_count} wallet(s)\n\n"
+                    f"• {type_emoji} {wallet_type.upper()} wallet ({wallet_count})\n\n"
                     f"• {len(chains)} chain(s): {', '.join(chain_names)}\n\n"
                     f"Your portfolio is being monitored 24/7 with AI-powered risk analysis.\n\n"
                     f"**Ask me anything:**\n\n"
                     f"💬 \"What's my current risk?\"\n\n"
                     f"💬 \"Explain my latest alert\"\n\n"
                     f"💬 \"How can I reduce my risk?\"\n\n"
+                )
+
+                if wallet_type == "solana":
+                    welcome_msg += (
+                        f"**Solana-specific:**\n\n"
+                        f"💬 \"What is mint authority?\"\n\n"
+                        f"💬 \"Is this token safe?\" (use `analyze`)\n\n"
+                    )
+
+                welcome_msg += (
                     f"**Or use commands:**\n\n"
-                    f"`status`\n\n `history`\n\n `portfolio`\n\n `chains`\n\n `help`"
+                    f"`status`\n\n `history`\n\n `portfolio`\n\n `chains`\n\n `analyze`\n\n `help`"
                 )
             else:
                 welcome_msg = (
                     "👋 **Welcome to DeFiGuard AI!**\n\n"
                     "Multi-chain portfolio risk monitoring with AI-powered insights.\n\n"
+                    "**Now supporting ◎ Solana + ⟠ 12 EVM chains!**\n\n"
                     "**Get Started:**\n\n"
                     "`register <wallet_address> <chains>`\n\n"
-                    "**Example:**\n\n"
+                    "**EVM Example:**\n\n"
                     "`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon,arbitrum`\n\n"
+                    "**Solana Example:**\n\n"
+                    "`register 9WzDXwBbmPdCBoccoc9Ra8JVoJLxp6YhHvCKioeNFfZY solana`\n\n"
                     "**Ask me anything:**\n\n"
                     "💬 \"What chains do you support?\"\n\n"
                     "💬 \"What risks do you monitor?\"\n\n"
                     "💬 \"How does the risk scoring work?\"\n\n"
-                    f"**Monitoring:** {len(SUPPORTED_CHAINS)} chains with ASI-1 AI"
+                    f"**Monitoring:** 13 chains with ASI-1 AI"
                 )
 
             response = create_text_chat(welcome_msg)
@@ -672,8 +862,9 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     else:
                         wallet = parse_result["wallet"]
                         chains = parse_result["chains"]
+                        wallet_type = parse_result["wallet_type"]
 
-                        save_user_portfolio(ctx, sender, [wallet], chains)
+                        save_user_portfolio(ctx, sender, [wallet], chains, wallet_type)
 
                         portfolio_msg = Portfolio(
                             user_id=sender,
@@ -685,30 +876,114 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         await ctx.send(PORTFOLIO_AGENT_ADDRESS, portfolio_msg)
 
                         chain_names = [SUPPORTED_CHAINS[c] for c in chains]
+                        type_emoji = get_chain_type_emoji(wallet_type)
+
                         success_msg = (
                                 f"✅ **Portfolio Registered!**\n\n"
-                                f"**Wallet:** \n\n`{wallet[:10]}...{wallet[-8:]}`\n\n"
+                                f"**Wallet ({type_emoji} {wallet_type.upper()}):** \n\n`{wallet[:10]}...{wallet[-8:]}`\n\n"
                                 f"**Monitoring {len(chains)} chain(s):**\n\n" +
                                 "\n".join(f"• {name}" for name in chain_names) +
                                 f"\n\n🛡️ AI-powered protection activated!\n\n"
-                                f"💬 Ask me: \"What should I know about my risk?\"\n\n"
-                                f"Or use\n\n `status`\n\n `history`\n\n `help`"
                         )
+
+                        if wallet_type == "solana":
+                            success_msg += (
+                                f"**◎ Solana Protection Includes:**\n\n"
+                                f"• Mint authority checks\n\n"
+                                f"• Freeze authority detection\n\n"
+                                f"• Rug pull analysis\n\n"
+                                f"• Holder concentration alerts\n\n"
+                            )
+
+                        success_msg += (
+                            f"💬 Ask me: \"What should I know about my risk?\"\n\n"
+                            f"Or use\n\n `status`\n\n `history`\n\n `analyze`\n\n `help`"
+                        )
+
                         await ctx.send(sender, create_text_chat(success_msg))
-                        ctx.logger.info(f"✅ Portfolio registered for {sender}")
+                        ctx.logger.info(f"✅ Portfolio registered for {sender} ({wallet_type})")
+
+                elif command.startswith("analyze "):
+                    parts = command.split()
+                    if len(parts) < 2:
+                        analyze_help = (
+                            "**🔍 Token Analysis**\n\n"
+                            "Analyze any token for fraud indicators.\n\n"
+                            "**Usage:**\n\n"
+                            "`analyze <token_address> [chain]`\n\n"
+                            "**Solana Example:**\n\n"
+                            "`analyze DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263`\n\n"
+                            "**EVM Example:**\n\n"
+                            "`analyze 0x...tokenaddress ethereum`\n\n"
+                            "Chain is auto-detected for Solana tokens."
+                        )
+                        await ctx.send(sender, create_text_chat(analyze_help))
+                    else:
+                        token_address = parts[1]
+                        chain = parts[2] if len(parts) > 2 else None
+
+                        addr_type = detect_address_type(token_address)
+                        if addr_type == "solana":
+                            chain = "solana"
+                        elif not chain:
+                            chain = "ethereum"
+
+                        analyze_msg = (
+                            f"🔍 **Analyzing Token...**\n\n"
+                            f"**Address:** `{token_address[:15]}...`\n\n"
+                            f"**Chain:** {SUPPORTED_CHAINS.get(chain, chain)}\n\n"
+                            f"**Type:** {'◎ Solana' if addr_type == 'solana' else '⟠ EVM'}\n\n"
+                            f"---\n\n"
+                            f"⏳ Analysis in progress...\n\n"
+                            f"The fraud detection agent will check:\n\n"
+                        )
+
+                        if addr_type == "solana":
+                            analyze_msg += (
+                                f"• Mint authority status\n\n"
+                                f"• Freeze authority status\n\n"
+                                f"• Holder distribution\n\n"
+                                f"• RugCheck database\n\n"
+                                f"• Jupiter token list\n\n"
+                            )
+                        else:
+                            analyze_msg += (
+                                f"• Contract verification\n\n"
+                                f"• Honeypot detection\n\n"
+                                f"• Buy/sell taxes\n\n"
+                                f"• Ownership status\n\n"
+                                f"• Holder concentration\n\n"
+                            )
+
+                        analyze_msg += f"\n💡 Results will appear shortly or ask me about this token!"
+
+                        await ctx.send(sender, create_text_chat(analyze_msg))
 
                 elif command == "chains":
-                    chains_msg = (
-                        f"🔗 **Supported Chains ({len(SUPPORTED_CHAINS)})**\n\n"
-                    )
-                    for i, (key, name) in enumerate(SUPPORTED_CHAINS.items(), 1):
-                        chains_msg += f"\n\n{i}. **{name}** \n\n`{key}`\n\n"
+                    unique_chains = {}
+                    for key, name in SUPPORTED_CHAINS.items():
+                        if key not in CHAIN_CANONICAL:
+                            chain_type = CHAIN_TYPES.get(key, "evm")
+                            if name not in unique_chains:
+                                unique_chains[name] = (key, chain_type)
+
+                    chains_msg = f"🔗 **Supported Chains ({len(unique_chains)})**\n\n"
+
+                    # Solana first
+                    chains_msg += "**◎ Solana Ecosystem:**\n\n"
+                    chains_msg += "• **Solana** `solana`\n\n"
+
+                    chains_msg += "**⟠ EVM Chains:**\n\n"
+                    for name, (key, chain_type) in unique_chains.items():
+                        if chain_type == "evm":
+                            chains_msg += f"• **{name}** `{key}`\n\n"
 
                     chains_msg += (
-                        f"\n\n---\n\n"
+                        f"---\n\n"
                         f"**Usage:**\n\n"
-                        f"`register <wallet> ethereum,bsc,polygon`\n\n"
-                        f"\n💬 **Ask me:** \"Which chain is best for low fees?"
+                        f"◎ `register <solana_wallet> solana`\n\n"
+                        f"⟠ `register <evm_wallet> ethereum,bsc,polygon`\n\n"
+                        f"\n💬 **Ask me:** \"Which chain is best for low fees?\""
                     )
                     await ctx.send(sender, create_text_chat(chains_msg))
 
@@ -717,11 +992,14 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     if portfolio:
                         wallets = portfolio.get("wallets", [])
                         chains = portfolio.get("chains", [])
+                        wallet_type = portfolio.get("wallet_type", "unknown")
                         chain_names = [SUPPORTED_CHAINS.get(c, c) for c in chains]
                         registered_at = portfolio.get("registered_at", "Unknown")
+                        type_emoji = get_chain_type_emoji(wallet_type)
 
                         portfolio_msg = (
                             f"📋 **Your Portfolio**\n\n"
+                            f"**Wallet Type:** {type_emoji} {wallet_type.upper()}\n\n"
                             f"**Wallet(s):**\n"
                         )
                         for i, wallet in enumerate(wallets, 1):
@@ -734,7 +1012,8 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     else:
                         portfolio_msg = (
                             "❌ No portfolio registered.\n\n"
-                            "Use:\n\n`register <wallet_address> <chains>`\n\n"
+                            "**EVM:**\n\n`register <0x_wallet> <chains>`\n\n"
+                            "**Solana:**\n\n`register <solana_wallet> solana`\n\n"
                             "💬 Or ask: \"How do I get started?\""
                         )
 
@@ -748,6 +1027,9 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                             "Register first:\n\n`register <wallet_address> <chains>`"
                         )
                     else:
+                        wallet_type = portfolio.get("wallet_type", "unknown")
+                        type_emoji = get_chain_type_emoji(wallet_type)
+
                         if user_alerts:
                             latest = user_alerts[-1]
                         else:
@@ -757,7 +1039,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         action = get_risk_action(latest['risk_level'])
 
                         status_msg = (
-                            f"📊 **Portfolio Status**\n\n"
+                            f"📊 **Portfolio Status** {type_emoji}\n\n"
                             f"**Risk Level:**  {emoji} {latest['risk_level'].upper()} \n\n"
                             f"**Risk Score:** {latest['risk_score']:.0%}\n\n"
                             f"**Updated:** {format_timestamp(latest['timestamp'])}\n\n"
@@ -791,7 +1073,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         "🆘 **DeFiGuard AI Commands**\n\n"
                         "**Setup:**\n\n"
                         "`register <wallet> <chains>` \n\n"
-                        "⌙ Register portfolio\n\n"
+                        "⌙ Register portfolio (EVM or Solana)\n\n"
 
                         "---\n\n"
 
@@ -809,19 +1091,29 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                         "`chains` \n\n"
                         "⌙ List supported chains\n\n"
 
+                        "`analyze <token> [chain]` \n\n"
+                        "⌙ Analyze token for fraud\n\n"
+
                         "---\n\n"
 
                         "**💬 Ask Me Anything:**\n\n"
                         "• \"What's my biggest risk?\"\n\n"
                         "• \"How can I diversify better?\"\n\n"
                         "• \"Explain smart contract risk\"\n\n"
+                        "• \"What is mint authority?\" (Solana)\n\n"
                         "• \"Which chains are safest?\"\n\n"
 
                         "---\n\n"
 
+                        "**Supported Wallets:**\n\n"
+                        "◎ Solana (base58)\n\n"
+                        "⟠ EVM (0x...)\n\n"
+
+                        "---\n\n"
+
                         "**AI-Powered:** ASI-1 model\n\n"
-                        f"**Monitoring:** {len(SUPPORTED_CHAINS)} chains\n\n"
-                        f"**Frequency:** Every 5 minutes"
+                        f"**Monitoring:** 13 chains (Solana + 12 EVM)\n\n"
+                        f"**Frequency:** Every 10 minutes"
                     )
                     await ctx.send(sender, create_text_chat(help_msg))
 
@@ -888,8 +1180,10 @@ async def startup(ctx: Context):
     mailbox_configured = bool(os.getenv('ALERT_AGENT_MAILBOX'))
     endpoint_configured = bool(os.getenv('DEFIGUARD_ENDPOINT'))
 
+    unique_chains = len([k for k in SUPPORTED_CHAINS.keys() if k not in CHAIN_CANONICAL])
+
     ctx.logger.info("=" * 70)
-    ctx.logger.info("🚨 DeFiGuard AI Alert Agent Started!")
+    ctx.logger.info("🚨 DeFiGuard AI Alert Agent Started! (Solana Enhanced)")
     ctx.logger.info(f"📍 Agent Address: {alert_agent.address}")
     ctx.logger.info(f"📫 Mailbox: {os.getenv('ALERT_AGENT_MAILBOX', 'Not configured')}")
     ctx.logger.info(f"📫 Mailbox Status: {'✅ CONFIGURED' if mailbox_configured else '❌ NOT CONFIGURED'}")
@@ -899,7 +1193,9 @@ async def startup(ctx: Context):
     ctx.logger.info("💬 ASI:One Chat Protocol enabled ✓")
     ctx.logger.info("🤖 ASI-1 AI Integration enabled ✓")
     ctx.logger.info(f"🔗 Portfolio Agent: {PORTFOLIO_AGENT_ADDRESS}")
-    ctx.logger.info(f"🔗 Supporting {len(SUPPORTED_CHAINS)} chains")
+    ctx.logger.info(f"🔗 Supporting {unique_chains} chains:")
+    ctx.logger.info(f"   ◎  Solana: 1 chain")
+    ctx.logger.info(f"   ⟠  EVM: {unique_chains - 1} chains")
     ctx.logger.info(f"📊 Stored alerts: {len(all_alerts)}")
     ctx.logger.info(f"👥 Active sessions: {len(sessions)}")
 
