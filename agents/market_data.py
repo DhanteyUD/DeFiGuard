@@ -332,7 +332,7 @@ def detect_solana_meme_volatility(token_data: Dict) -> Optional[MarketAlert]:
         return MarketAlert(
             alert_type="meme_coin_volatility",
             token=symbol,
-            message=f"☀️ Solana meme coin {symbol} {direction} {abs(price_change_24h):.1f}% in 24h",
+            message=f"◎ Solana meme coin {symbol} {direction} {abs(price_change_24h):.1f}% in 24h",
             severity=severity,
             chain="solana"
         )
@@ -447,7 +447,7 @@ async def startup(ctx: Context):
     ctx.logger.info(f"📍 Agent Address: {market_agent.address}")
     ctx.logger.info("☁️  Running on Agentverse")
     ctx.logger.info("🔗 Connected to CoinGecko API")
-    ctx.logger.info(f"☀️  Solana tokens mapped: ~{solana_tokens}")
+    ctx.logger.info(f"◎  Solana tokens mapped: ~{solana_tokens}")
     ctx.logger.info(f"⟠  EVM tokens mapped: ~{evm_tokens}")
     ctx.logger.info("🚨 Alerts: Price change, Volume spike, Meme volatility")
     ctx.logger.info("=" * 60)

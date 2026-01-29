@@ -595,7 +595,7 @@ async def startup(ctx: Context):
     ctx.logger.info(f"📍 Address: {portfolio_agent.address}")
     ctx.logger.info(f"📊 Portfolios: {len(keys)}")
     ctx.logger.info(f"🔗 Total Chains: {len(supported_chains)}")
-    ctx.logger.info(f"   ☀️  Solana: {len(solana_chains)} chain(s)")
+    ctx.logger.info(f"   ◎  Solana: {len(solana_chains)} chain(s)")
     ctx.logger.info(f"   ⟠  EVM: {len(evm_chains)} chain(s)")
     ctx.logger.info("⚡ Optimized for Agentverse limits")
     ctx.logger.info("🔄 Scans 1 portfolio per 10-min cycle")

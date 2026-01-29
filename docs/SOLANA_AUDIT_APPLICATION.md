@@ -144,7 +144,7 @@ metta/
       │         ┌─────────────────────┐            │
       └────────►│  Blockchain APIs    │◄───────────┘
                 │                     │
-                │  ☀️ Solana RPC      │
+                │  ◎ Solana RPC      │
                 │  ⟠ EVM RPC (12)    │
                 │  📊 CoinGecko      │
                 │  🔍 GoPlus/RugCheck│

@@ -365,7 +365,7 @@ async def analyze_token(ctx: Context, sender: str, msg: TokenAnalysisRequest):
         chain_type = detect_chain_type(msg.chain, msg.token_address)
 
         if chain_type == "solana":
-            ctx.logger.info("☀️ Detected Solana token - using Solana fraud detector")
+            ctx.logger.info("◎ Detected Solana token - using Solana fraud detector")
             report = await analyze_solana_token(msg.token_address)
         else:
             ctx.logger.info("⟠ Detected EVM token - using GoPlus security API")
@@ -405,7 +405,7 @@ async def startup(ctx: Context):
     ctx.logger.info("🔍 Ready to analyze tokens for fraud indicators")
     ctx.logger.info("")
     ctx.logger.info("📡 Connected APIs:")
-    ctx.logger.info("   ☀️  Solana: RugCheck.xyz, Jupiter, Metaplex")
+    ctx.logger.info("   ◎  Solana: RugCheck.xyz, Jupiter, Metaplex")
     ctx.logger.info("   ⟠  EVM: GoPlus Security, Honeypot.is")
     ctx.logger.info("")
     ctx.logger.info("🔗 Supported Chains:")

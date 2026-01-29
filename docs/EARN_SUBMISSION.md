@@ -13,7 +13,7 @@
 
 🛡️ **Real-time Portfolio Monitoring** - Tracks wallets across 13 chains
 🧠 **AI Risk Analysis** - SingularityNET MeTTa knowledge graphs
-☀️ **Full Solana Support** - SPL tokens, mint authority checks, RugCheck integration
+◎ **Full Solana Support** - SPL tokens, mint authority checks, RugCheck integration
 🚨 **Fraud Detection** - Honeypot detection, holder concentration analysis
 💬 **Natural Language Interface** - Chat-based interaction via ASI:One
 
