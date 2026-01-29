@@ -646,7 +646,7 @@ def analyze_chain_diversity(assets: List[Dict]) -> Dict:
                         f"{chain_emoji} {chain_percent * 100:.0f}% of portfolio on {chain.upper()}"
                     )
 
-        diversity_score = max(0, 0.3 - (unique_chains * 0.1))
+        diversity_score = max(0.0, 0.3 - (unique_chains * 0.1))
 
     return {
         "concerns": concerns,
