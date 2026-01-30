@@ -374,7 +374,6 @@ All thresholds defined declaratively:
 ## 📚 Documentation
 
 - **[README.md](README.md)** - Project overview
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Agentverse deployment
 - **[docs/METTA_INTEGRATION.md](docs/METTA_INTEGRATION.md)** - MeTTa AI details
 
 **Agent Docs:**
