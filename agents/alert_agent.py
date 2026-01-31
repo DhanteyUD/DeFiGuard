@@ -388,22 +388,61 @@ def validate_chain(chain: str) -> Dict:
 
 
 def parse_register_command(text: str) -> Dict:
-    parts = text.strip().split()
+    text = text.strip()
 
-    if len(parts) < 3:
+    # EVM address pattern
+    evm_pattern = r'(0x[a-fA-F0-9]{40})'
+    # Solana address pattern (base58, 32-44 chars)
+    solana_pattern = r'\b([1-9A-HJ-NP-Za-km-z]{32,44})\b'
+
+    evm_match = re.search(evm_pattern, text)
+    solana_match = None
+
+    if not evm_match:
+        solana_match = re.search(solana_pattern, text)
+
+    # Determine wallet from matches
+    wallet = None
+    if evm_match:
+        wallet = evm_match.group(1)
+    elif solana_match:
+        wallet = solana_match.group(1)
+
+    if not wallet:
+        parts = text.split()
+
+        # Find "register" and get the next word as potential wallet
+        for i, part in enumerate(parts):
+            if part.lower() == "register" and i + 1 < len(parts):
+                potential_wallet = parts[i + 1]
+                potential_wallet = potential_wallet.rstrip('.,;:!?')
+                if potential_wallet.startswith("0x") or is_valid_solana_address(potential_wallet):
+                    wallet = potential_wallet
+                    break
+
+        if not wallet:
+            for part in parts:
+                part = part.rstrip('.,;:!?')
+                if part.startswith("0x") and len(part) >= 42:
+                    wallet = part[:42]
+                    break
+                elif is_valid_solana_address(part):
+                    wallet = part
+                    break
+
+    if not wallet:
         return {
             "valid": False,
             "error": (
-                "Invalid format. Use:\n\n"
+                "**Could not find a valid wallet address.**\n\n"
+                "Use:\n"
                 "`register <wallet_address> <chains>`\n\n"
-                "**EVM Example:**\n\n"
+                "**EVM Example:**\n"
                 "`register 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb ethereum,polygon`\n\n"
-                "**Solana Example:**\n\n"
+                "**Solana Example:**\n"
                 "`register 9WzDXwBbmPdCBoccoc9Ra8JVoJLxp6YhHvCKioeNFfZY solana`"
             )
         }
-
-    wallet = parts[1]
 
     wallet_validation = validate_wallet_address(wallet)
     if not wallet_validation["valid"]:
@@ -414,55 +453,56 @@ def parse_register_command(text: str) -> Dict:
 
     wallet_type = wallet_validation["type"]  # "solana" or "evm"
 
-    chains_input = " ".join(parts[2:])
+    text_without_wallet = text.replace(wallet, " ")
 
-    if "," in chains_input:
-        chains = [c.strip().lower() for c in chains_input.split(",")]
-    else:
-        chains = [c.strip().lower() for c in parts[2:]]
+    chain_keywords = list(SUPPORTED_CHAINS.keys())
 
-    chains = list(dict.fromkeys(chains))
+    found_chains = []
+    text_lower = text_without_wallet.lower()
+
+    for chain in chain_keywords:
+        if re.search(r'\b' + re.escape(chain) + r'\b', text_lower):
+            found_chains.append(chain)
+
+    if not found_chains:
+        parts = text_without_wallet.strip().split()
+        for part in parts:
+            part_clean = part.lower().rstrip('.,;:!?').lstrip('.,;:!?')
+            # Handle comma-separated
+            if "," in part_clean:
+                for sub_part in part_clean.split(","):
+                    sub_part = sub_part.strip()
+                    if sub_part in SUPPORTED_CHAINS:
+                        found_chains.append(sub_part)
+            elif part_clean in SUPPORTED_CHAINS:
+                found_chains.append(part_clean)
+
+    found_chains = list(dict.fromkeys(found_chains))
 
     valid_chains = []
-    invalid_chains = []
-    chain_types_found = set()
-
-    for chain in chains:
-        if not chain:
-            continue
-
+    for chain in found_chains:
         chain_validation = validate_chain(chain)
         if chain_validation["valid"]:
             valid_chains.append(chain_validation["chain_key"])
-            chain_types_found.add(chain_validation["chain_type"])
-        else:
-            invalid_chains.append(chain_validation["error"])
 
-    if invalid_chains:
-        unique_chains = list(dict.fromkeys([
-            k for k in SUPPORTED_CHAINS.keys()
-            if k not in CHAIN_CANONICAL  # Skip aliases
-        ]))
-        supported_list = ", ".join(unique_chains)
-        return {
-            "valid": False,
-            "error": (
-                    f"❌ Invalid chain(s):\n\n" +
-                    "\n\n".join(f"• {err}" for err in invalid_chains) +
-                    f"\n\n**Supported chains:**\n\n{supported_list}"
-            )
-        }
+    valid_chains = list(dict.fromkeys(valid_chains))
 
     if not valid_chains:
-        return {
-            "valid": False,
-            "error": "No valid chains specified"
-        }
+        if wallet_type == "solana":
+            valid_chains = ["solana"]
+        else:
+            return {
+                "valid": False,
+                "error": (
+                    "**Please specify which chains to monitor.**\n\n"
+                    f"Your wallet: `{wallet[:10]}...{wallet[-6:]}`\n\n"
+                    "**Example:**\n"
+                    f"`register {wallet} ethereum,polygon,arbitrum`\n\n"
+                    "**Available EVM chains:** ethereum, bsc, polygon, arbitrum, optimism, avalanche, base, fantom, gnosis, moonbeam, celo, cronos"
+                )
+            }
 
     # ===== CROSS-CHAIN COMPATIBILITY CHECK =====
-    # Solana wallets can only monitor Solana
-    # EVM wallets can only monitor EVM chains
-
     if wallet_type == "solana":
         evm_chains = [c for c in valid_chains if CHAIN_TYPES.get(c) == "evm"]
         if evm_chains:
@@ -497,8 +537,6 @@ def parse_register_command(text: str) -> Dict:
             "valid": False,
             "error": "Too many chains (max 10). Please select your main chains."
         }
-
-    valid_chains = list(dict.fromkeys(valid_chains))
 
     return {
         "valid": True,
@@ -713,8 +751,17 @@ If the user asks how to use the system, mention these commands:
 
 
 def is_direct_command(text: str) -> bool:
-    command = text.strip().lower().split()[0] if text.strip() else ""
-    return command in DIRECT_COMMANDS
+    text_lower = text.strip().lower()
+
+    first_word = text_lower.split()[0] if text_lower.split() else ""
+    if first_word in DIRECT_COMMANDS:
+        return True
+
+    if "register" in text_lower:
+        if "0x" in text or re.search(r'[1-9A-HJ-NP-Za-km-z]{32,44}', text):
+            return True
+
+    return False
 
 
 @alert_agent.on_message(model=AlertNotification)
