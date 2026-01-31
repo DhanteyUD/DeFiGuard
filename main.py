@@ -30,7 +30,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-AGENT_NAME = "DeFiGuard Alert Agent"
+AGENT_NAME = "DeFiGuard-2.0"
 AGENT_URL = "https://defiguard-production.up.railway.app/submit"
 
 SYSTEM_VERSION = "2.0.0-solana"
@@ -54,32 +54,49 @@ def check_agent_status():
         )
 
         if res.status_code == 404:
-            # API endpoint changed or not available
-            # Assume agent is active since registration works
-            logger.debug("Agentverse /api/agents returned 404 - endpoint may have changed")
-            return True, "assumed_active"
+            # API endpoint changed or not available - return unknown status
+            logger.warning("Agentverse /api/agents endpoint returned 404")
+            return False, "api_unavailable"
 
         if res.status_code != 200:
-            logger.warning(f"Failed to fetch agents: {res.status_code}")
-            return True, "assumed_active"
+            logger.warning(f"Failed to fetch agents: {res.status_code} - {res.text}")
+            return False, "api_error"
 
-        agents = res.json()
+        try:
+            data = res.json()
+        except ValueError:
+            logger.warning(f"Invalid JSON response from Agentverse: {res.text[:100]}")
+            return False, "invalid_response"
 
-        for agent in agents.get("agents", []):
-            if agent.get("name") == AGENT_NAME:
+        # Handle different possible response formats
+        agents = data.get("agents", [])
+        if not agents and isinstance(data, list):
+            agents = data
+
+        for agent in agents:
+            agent_name = agent.get("name")
+            if agent_name == AGENT_NAME:
                 is_active = agent.get("active", False)
-                logger.info(f"Found agent '{AGENT_NAME}' - Active: {is_active}")
+                agent_id = agent.get("id", "unknown")
+                logger.info(f"Found agent '{AGENT_NAME}' (ID: {agent_id}) - Active: {is_active}")
                 return True, "active" if is_active else "inactive"
 
-        logger.info(f"Agent '{AGENT_NAME}' not found in Agentverse")
+        all_agent_names = [a.get("name", "unnamed") for a in agents]
+        logger.info(f"Agent '{AGENT_NAME}' not found in Agentverse. Available agents: {all_agent_names[:10]}")
         return False, "not_found"
 
-    except requests.RequestException as e:
+    except requests.exceptions.Timeout:
+        logger.warning("Timeout checking agent status - Agentverse API unreachable")
+        return False, "timeout"
+    except requests.exceptions.ConnectionError:
+        logger.warning("Connection error checking agent status - Network issue")
+        return False, "connection_error"
+    except requests.exceptions.RequestException as e:
         logger.warning(f"Network error checking agent status: {e}")
-        return True, "assumed_active"
+        return False, "network_error"
     except Exception as e:
-        logger.error(f"Error checking agent status: {e}", exc_info=True)
-        return True, "assumed_active"
+        logger.error(f"Unexpected error checking agent status: {e}", exc_info=True)
+        return False, "error"
 
 
 def register_agent(force=False):
@@ -89,24 +106,55 @@ def register_agent(force=False):
         exists, status = check_agent_status()
 
         should_register = False
+        registration_reason = ""
+        early_return = False
+        return_data = (True, "")
 
-        if not exists and status == "not_found":
+        if status == "not_found":
             logger.info("📝 Agent not found. Will register new agent.")
             should_register = True
+            registration_reason = "agent_not_found"
         elif status == "inactive":
             logger.warning("⚠️  Agent exists but is INACTIVE. Will re-register.")
             should_register = True
-        elif status in ["active", "assumed_active"]:
-            logger.info(f"✅ Agent already registered and {status.upper()}.")
+            registration_reason = "agent_inactive"
+        elif status == "active":
             if force:
-                logger.info("🔄 Force flag set. Re-registering anyway.")
+                logger.info("🔄 Force flag set. Re-registering active agent.")
                 should_register = True
+                registration_reason = "force_renewal"
+            else:
+                logger.info("✅ Agent already registered and ACTIVE.")
+                early_return = True
+                return_data = (True, "already_active")
+        elif status in ["api_unavailable", "api_error", "invalid_response",
+                        "timeout", "connection_error", "network_error", "error"]:
+            if force:
+                logger.warning(f"⚠️  API status: {status}. Force flag set, attempting registration anyway.")
+                should_register = True
+                registration_reason = f"force_despite_{status}"
+            else:
+                logger.warning(f"⚠️  Cannot verify agent status due to: {status}")
+                logger.warning(f"⚠️  Skipping registration. Use force=True to register anyway.")
+                early_return = True
+                return_data = (False, f"skipped_due_to_{status}")
         else:
-            logger.warning(f"⚠️  Unknown agent status: {status}. Will attempt registration.")
-            should_register = True
+            logger.warning(f"⚠️  Unknown agent status: {status}")
+            if force:
+                logger.info("🔄 Force flag set. Attempting registration.")
+                should_register = True
+                registration_reason = f"force_unknown_{status}"
+            else:
+                early_return = True
+                return_data = (False, f"skipped_unknown_{status}")
+
+        if early_return:
+            return return_data
 
         if not should_register:
-            return True
+            return True, "no_registration_needed"
+
+        logger.info(f"📝 Registration reason: {registration_reason}")
 
         logger.info(f"🧠 Registering agent with Agentverse...")
         logger.info(f"   Name: {AGENT_NAME}")
@@ -122,33 +170,40 @@ def register_agent(force=False):
             ),
         )
 
-        logger.info("✅ Agent registration successful!")
+        logger.info("✅ Agent registration attempt completed!")
 
+        # Verify registration after delay
         import time
-        time.sleep(2)
+        time.sleep(3)
+
         exists, status = check_agent_status()
 
-        if status in ["active", "assumed_active"]:
-            logger.info(f"✅ Registration verified - Agent is {status.upper()}")
-            return True
+        if status == "active":
+            logger.info("✅ Registration verified - Agent is ACTIVE")
+            return True, "verified_active"
+        elif status == "inactive":
+            logger.warning("⚠️  Registration completed but agent shows as INACTIVE")
+            return False, "registration_failed_inactive"
         elif status == "not_found":
-            logger.warning("⚠️  Agent not immediately visible, but registration succeeded")
-            return True
+            logger.warning("⚠️  Registration completed but agent not found in verification")
+            return False, "registration_failed_not_found"
         else:
-            logger.warning(f"⚠️  Registration completed but verification returned: {status}")
-            return True
+            logger.warning(f"⚠️  Registration completed but verification uncertain: {status}")
+            # Could be API issues, so return true but log warning
+            return True, f"registration_completed_but_{status}"
 
     except KeyError as e:
         logger.error(f"❌ Missing environment variable: {e}")
         logger.error("Please ensure AGENTVERSE_KEY and AGENT_SEED_PHRASE are set")
-        return False
+        return False, "missing_env_vars"
     except Exception as e:
         logger.error(f"❌ Agent registration failed: {e}", exc_info=True)
-        return False
+        return False, f"exception_{str(e)[:50]}"
 
 
 async def periodic_health_check():
-    check_interval = 300
+    """Periodic check to ensure agent is properly registered"""
+    check_interval = 300  # 5 minutes
 
     while True:
         try:
@@ -157,16 +212,26 @@ async def periodic_health_check():
             logger.info("🔍 Performing periodic agent health check...")
             exists, status = check_agent_status()
 
-            if status == "inactive":
-                logger.warning(f"⚠️  Agent is INACTIVE! Attempting re-registration...")
-                register_agent(force=True)
+            if status == "active":
+                logger.info("✅ Agent health check passed - Agent is ACTIVE")
+            elif status == "inactive":
+                logger.warning("⚠️  Agent is INACTIVE! Attempting re-registration...")
+                success = register_agent(force=True)
+                if success:
+                    logger.info("✅ Re-registration successful")
+                else:
+                    logger.error("❌ Re-registration failed")
             elif status == "not_found":
-                logger.warning(f"⚠️  Agent not found! Attempting registration...")
-                register_agent(force=False)
-            elif status == "assumed_active":
-                logger.info("✅ Agent health check passed (status API unavailable, assuming active)")
+                logger.warning("⚠️  Agent not found! Attempting registration...")
+                success = register_agent(force=False)
+                if success:
+                    logger.info("✅ Registration successful")
+                else:
+                    logger.error("❌ Registration failed")
+            elif status in ["api_unavailable", "api_error", "timeout", "connection_error", "network_error"]:
+                logger.warning(f"⚠️  Agentverse API issue: {status}. Will retry later.")
             else:
-                logger.info(f"✅ Agent health check passed (status: {status})")
+                logger.warning(f"⚠️  Unknown agent status: {status}")
 
         except Exception as e:
             logger.error(f"Error in periodic health check: {e}", exc_info=True)
@@ -335,7 +400,8 @@ async def agent_status(request):
                 "address": alert_agent.address,
                 "status": "running",
                 "chat_enabled": True,
-                "agentverse_status": av_status if exists else "not_registered",
+                "agentverse_registered": exists,
+                "agentverse_status": av_status,
                 "features": ["Solana wallet support", "Token analysis command"]
             },
             {
@@ -353,7 +419,8 @@ async def agent_status(request):
         ],
         "agentverse": {
             "registered": exists,
-            "status": av_status
+            "status": av_status,
+            "note": "active = verified active, inactive = verified inactive, other = error state"
         },
         "chains": {
             "solana": SUPPORTED_CHAINS["solana"],

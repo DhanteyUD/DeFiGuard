@@ -9,7 +9,7 @@ from uagents_core.utils.registration import (
 # python register_agent.py
 
 register_chat_agent(
-    "DeFiGuard Alert Agent",
+    "DeFiGuard-2.0",
     "https://defiguard-production.up.railway.app/submit",
     active=True,
     credentials=RegistrationRequestCredentials(
