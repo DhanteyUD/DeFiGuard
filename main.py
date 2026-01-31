@@ -156,6 +156,13 @@ def register_agent(force=False):
 
         logger.info(f"📝 Registration reason: {registration_reason}")
 
+        logger.debug(f"AGENTVERSE_KEY exists: {'AGENTVERSE_KEY' in os.environ}")
+        logger.debug(f"AGENT_SEED_PHRASE exists: {'AGENT_SEED_PHRASE' in os.environ}")
+
+        if 'AGENTVERSE_KEY' in os.environ:
+            logger.debug(f"AGENTVERSE_KEY length: {len(os.environ['AGENTVERSE_KEY'])}")
+            logger.debug(f"AGENTVERSE_KEY first 10 chars: {os.environ['AGENTVERSE_KEY'][:10]}...")
+
         logger.info(f"🧠 Registering agent with Agentverse...")
         logger.info(f"   Name: {AGENT_NAME}")
         logger.info(f"   URL: {AGENT_URL}")
@@ -216,18 +223,18 @@ async def periodic_health_check():
                 logger.info("✅ Agent health check passed - Agent is ACTIVE")
             elif status == "inactive":
                 logger.warning("⚠️  Agent is INACTIVE! Attempting re-registration...")
-                success = register_agent(force=True)
+                success, message = register_agent(force=True)
                 if success:
-                    logger.info("✅ Re-registration successful")
+                    logger.info(f"✅ Re-registration successful: {message}")
                 else:
-                    logger.error("❌ Re-registration failed")
+                    logger.error(f"❌ Re-registration failed: {message}")
             elif status == "not_found":
                 logger.warning("⚠️  Agent not found! Attempting registration...")
-                success = register_agent(force=False)
+                success, message = register_agent(force=False)
                 if success:
-                    logger.info("✅ Registration successful")
+                    logger.info(f"✅ Registration successful: {message}")
                 else:
-                    logger.error("❌ Registration failed")
+                    logger.error(f"❌ Registration failed: {message}")
             elif status in ["api_unavailable", "api_error", "timeout", "connection_error", "network_error"]:
                 logger.warning(f"⚠️  Agentverse API issue: {status}. Will retry later.")
             else:
@@ -434,19 +441,19 @@ async def reregister_handler(request):
     logger.info(f"Manual re-registration triggered from {request.remote}")
 
     try:
-        success = register_agent(force=True)
+        success, message = register_agent(force=True)
 
         if success:
             return web.json_response({
                 "success": True,
-                "message": "Agent re-registered successfully",
+                "message": f"Agent re-registered successfully: {message}",
                 "agent_name": AGENT_NAME,
                 "version": SYSTEM_VERSION
             })
         else:
             return web.json_response({
                 "success": False,
-                "message": "Re-registration attempted but may have failed. Check logs.",
+                "message": f"Re-registration failed: {message}",
                 "agent_name": AGENT_NAME
             }, status=500)
 
@@ -536,11 +543,13 @@ async def main_async():
     await asyncio.sleep(3)
 
     # Register agent with Agentverse
-    registration_success = register_agent()
+    registration_success, message = register_agent()
 
     if not registration_success:
-        logger.warning("⚠️  Initial registration failed, but continuing startup...")
+        logger.warning(f"⚠️  Initial registration failed: {message}")
         logger.warning("⚠️  The system will retry registration in 5 minutes via health check")
+    else:
+        logger.info(f"✅ Registration status: {message}")
 
     logger.info("=" * 60)
     logger.info(f"🚀 Starting DeFiGuard services (v{SYSTEM_VERSION})...")
