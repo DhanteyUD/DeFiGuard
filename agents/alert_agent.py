@@ -91,8 +91,10 @@ alert_agent = Agent(
     name="alert_agent",
     seed=os.getenv("ALERT_AGENT_SEED", "alert_agent_seed"),
     port=8002,
-    endpoint=[os.getenv("DEFIGUARD_ENDPOINT", "")],
-    mailbox=os.getenv("ALERT_AGENT_MAILBOX"),  # type: ignore
+    mailbox=True,
+    publish_agent_details=True,
+    # endpoint=[os.getenv("DEFIGUARD_ENDPOINT", "")],
+    # mailbox=os.getenv("ALERT_AGENT_MAILBOX"),  # type: ignore
     readme_path="README.md",
 )
 
