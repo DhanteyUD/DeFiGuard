@@ -128,7 +128,7 @@ cp .env.example .env
 # Add your AGENT_SEEDS
 
 # Run tests
-python tests/test_integration.py
+python tests/test_solana_integration.py
 
 # Start all agents
 python main.py
