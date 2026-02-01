@@ -99,62 +99,9 @@ def check_agent_status():
         return False, "error"
 
 
-def register_agent(force=False):
+def register_agent():
     try:
-        logger.info("🔍 Checking Agentverse registration...")
-
-        exists, status = check_agent_status()
-
-        should_register = False
-        registration_reason = ""
-        early_return = False
-        return_data = (True, "")
-
-        if status == "not_found":
-            logger.info("📝 Agent not found. Will register new agent.")
-            should_register = True
-            registration_reason = "agent_not_found"
-        elif status == "inactive":
-            logger.warning("⚠️  Agent exists but is INACTIVE. Will re-register.")
-            should_register = True
-            registration_reason = "agent_inactive"
-        elif status == "active":
-            if force:
-                logger.info("🔄 Force flag set. Re-registering active agent.")
-                should_register = True
-                registration_reason = "force_renewal"
-            else:
-                logger.info("✅ Agent already registered and ACTIVE.")
-                early_return = True
-                return_data = (True, "already_active")
-        elif status in ["api_unavailable", "api_error", "invalid_response",
-                        "timeout", "connection_error", "network_error", "error"]:
-            if force:
-                logger.warning(f"⚠️  API status: {status}. Force flag set, attempting registration anyway.")
-                should_register = True
-                registration_reason = f"force_despite_{status}"
-            else:
-                logger.warning(f"⚠️  Cannot verify agent status due to: {status}")
-                logger.warning(f"⚠️  Skipping registration. Use force=True to register anyway.")
-                early_return = True
-                return_data = (False, f"skipped_due_to_{status}")
-        else:
-            logger.warning(f"⚠️  Unknown agent status: {status}")
-            if force:
-                logger.info("🔄 Force flag set. Attempting registration.")
-                should_register = True
-                registration_reason = f"force_unknown_{status}"
-            else:
-                early_return = True
-                return_data = (False, f"skipped_unknown_{status}")
-
-        if early_return:
-            return return_data
-
-        if not should_register:
-            return True, "no_registration_needed"
-
-        logger.info(f"📝 Registration reason: {registration_reason}")
+        logger.info("🔄 Registering agent with Agentverse...")
 
         logger.debug(f"AGENTVERSE_KEY exists: {'AGENTVERSE_KEY' in os.environ}")
         logger.debug(f"AGENT_SEED_PHRASE exists: {'AGENT_SEED_PHRASE' in os.environ}")
@@ -177,27 +124,15 @@ def register_agent(force=False):
             ),
         )
 
-        logger.info("✅ Agent registration attempt completed!")
+        logger.info("✅ Agent registration completed!")
 
-        # Verify registration after delay
         import time
-        time.sleep(3)
+        time.sleep(2)
 
         exists, status = check_agent_status()
+        logger.info(f"✅ Registration completed. Verification status: {status}")
 
-        if status == "active":
-            logger.info("✅ Registration verified - Agent is ACTIVE")
-            return True, "verified_active"
-        elif status == "inactive":
-            logger.warning("⚠️  Registration completed but agent shows as INACTIVE")
-            return False, "registration_failed_inactive"
-        elif status == "not_found":
-            logger.warning("⚠️  Registration completed but agent not found in verification")
-            return False, "registration_failed_not_found"
-        else:
-            logger.warning(f"⚠️  Registration completed but verification uncertain: {status}")
-            # Could be API issues, so return true but log warning
-            return True, f"registration_completed_but_{status}"
+        return True, f"registration_completed_{status}"
 
     except KeyError as e:
         logger.error(f"❌ Missing environment variable: {e}")
@@ -223,14 +158,14 @@ async def periodic_health_check():
                 logger.info("✅ Agent health check passed - Agent is ACTIVE")
             elif status == "inactive":
                 logger.warning("⚠️  Agent is INACTIVE! Attempting re-registration...")
-                success, message = register_agent(force=True)
+                success, message = register_agent()
                 if success:
                     logger.info(f"✅ Re-registration successful: {message}")
                 else:
                     logger.error(f"❌ Re-registration failed: {message}")
             elif status == "not_found":
                 logger.warning("⚠️  Agent not found! Attempting registration...")
-                success, message = register_agent(force=False)
+                success, message = register_agent()
                 if success:
                     logger.info(f"✅ Registration successful: {message}")
                 else:
@@ -441,7 +376,7 @@ async def reregister_handler(request):
     logger.info(f"Manual re-registration triggered from {request.remote}")
 
     try:
-        success, message = register_agent(force=True)
+        success, message = register_agent()
 
         if success:
             return web.json_response({
@@ -542,7 +477,8 @@ async def main_async():
     logger.info("⏳ Waiting for services to initialize...")
     await asyncio.sleep(3)
 
-    # Register agent with Agentverse
+    # Register agent with Agentverse - always attempt registration
+    logger.info("🔄 Attempting agent registration...")
     registration_success, message = register_agent()
 
     if not registration_success:
