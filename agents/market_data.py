@@ -38,8 +38,8 @@ market_agent = Agent(
     name="market_data",
     seed=os.getenv("MARKET_AGENT_SEED", "market_agent_seed"),
     port=8003,
-    endpoint=["https://defiguard-production.up.railway.app/submit"],
-    mailbox=True
+    mailbox=True,
+    # endpoint=["https://defiguard-production.up.railway.app/submit"]
 )
 
 fund_agent_if_low(str(market_agent.wallet.address()))

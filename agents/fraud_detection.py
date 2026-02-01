@@ -40,8 +40,8 @@ fraud_agent = Agent(
     name="fraud_detection",
     seed=os.getenv("FRAUD_AGENT_SEED", "fraud_agent_seed"),
     port=8004,
-    endpoint=["https://defiguard-production.up.railway.app/submit"],
-    mailbox=True
+    mailbox=True,
+    # endpoint=["https://defiguard-production.up.railway.app/submit"]
 )
 
 fund_agent_if_low(str(fraud_agent.wallet.address()))
